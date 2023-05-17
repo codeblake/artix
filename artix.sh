@@ -125,14 +125,9 @@ mv /mnt/boot/efi/EFI/boot/grubx64.efi to /mnt/boot/efi/EFI/boot/bootx86.efi
 curl -L "https://github.com/archlinux/svntogit-packages/raw/packages/pacman-mirrorlist/trunk/mirrorlist" \
      -o /mnt/etc/pacman.d/mirrorlist-arch
 
-# Uncomment arch mirrorlist
-sed -i 's/^#//g' /mnt/etc/pacman.d/mirrorlist-arch
-
-# BETTER WAY but NOT WORKING:
-# vim -c "/United Kingdom" \
-#     -c "norm vip" \
-#     -c "'<,'>s^#" \
-#     /etc/pacman.d/mirrorlist-arch
+# Uncomment location in Arch mirrorlist
+vim -s <(printf "/United Kingdom\nvip:s/^#//g\n:wq\n") \
+    /mnt/etc/pacman.d/mirrorlist-arch
 
 # add mirror list to pacman
 echo "
