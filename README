@@ -1,28 +1,64 @@
 ======================================================
-Install Artix Linux with LUKS Root Encryption & BTRFS
+Installs Artix Linux with LUKS Root Encryption & BTRFS
 ======================================================
 Working on: UEFI
 
-Usage:
-1. IMPORTANT! configure DRIVE options in CONFIG section.
+USAGE:
+1. Configure DRIVE & other options in script
 2. boot up an Artix Linux live ISO installation
 3. login as 'root' with password 'artix'
 4. get the installation script onto the system
 5. execute script
 
-Notes:
+NOTES:
 - DECRYPTION password is set via installation
 - default 'root' password is 'artix'
 - USER password is the same as the DECRYPTION password
 
-Example System Layout:
-DEVICE                   LABEL   MOUNT            SIZE
-------------------------------------------------------
-/dev/sda
-├─/dev/sda1              BOOT    /boot              1G
-├─/dev/sda2              SWAP    [SWAP]            16G
-└─/dev/sda3              LUKS                      MAX
-  └─/dev/mapper/root     ROOT
-    └─@                          /
-    └─@home                      /home
-    └─@snapshots                 /.snapshots
+SYSTEM LAYOUT:
++---------------------------------------------------+
+| Device               | Label | Mount       | Size |
+|---------------------------------------------------|
+| /dev/sda             |       |             |      |
+| ├─/dev/sda1          | BOOT  | /boot       | 512M |
+| ├─/dev/sda2          | SWAP  | [SWAP]      |  16G |
+| └─/dev/sda3          | LUKS  |             |  MAX |
+|   └─/dev/mapper/root | ROOT  |             |      |
+|     └─@              |       | /           |      |
+|     └─@home          |       | /home       |      |
+|     └─@snapshots     |       | /.snapshots |      |
++---------------------------------------------------+
+
+CONFIGURATION:
+- drive :the drive to perform the installation
+
+- boot: the boot partition
+
+- swap: the swap partition
+
+- root: the root partition (which will be encrypted)
+
+- timezone: a timezone (defined in '/usr/share/zoneinfo/')
+
+- locale: a locale (defined in '/etc/locale.gen')
+
+- user: the main user of the system
+
+- user_groups: the groups for 'user' belongs to
+
+- hostname: the hostname of the system
+
+- arch_support: whether enable Arch repositories
+  (enables extra, community, & multilib)
+
+- enable_aur: specifies whether to install an AUR helper
+  (uses trizen as AUR helper)
+
+- swap_size: Defaults to formula, but can be overwritten
+  e.g: 'swap_size=8G'.
+
+- boot_size: Defaults to 512M. Can be overwritten
+  in CONFIG e.g: boot_size=1G.
+
+NOTES
+Last tested using 'artix-base-runit-20230501-x86_64.iso' on UEFI
