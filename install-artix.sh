@@ -23,7 +23,6 @@
 #
 # TODO LIST:
 # - FIXME: BIOS installation not booting
-# - TODO: add arch mirrors support option
 #
 # ==========================================================
 #                         CONFIG
@@ -38,6 +37,7 @@ locale=en_GB
 hostname=artix
 user=blake
 user_groups=wheel,video,audio
+arch_support=true
 
 # ==========================================================
 #                     INSTALLATION
@@ -252,9 +252,19 @@ fi
 artix-chroot /mnt bash -c "grub-install ${grub_options}"
 artix-chroot /mnt bash -c "grub-mkconfig -o /boot/grub/grub.cfg"
 
+echo "
+======================================================================
+                    MAIN INSTALLATION COMPLETE!
+======================================================================
+"
+
+# EXTRA
+source extra.sh
+[[ $arch_support == true ]] && enable_arch
+
 # FINISH
 umount -R /mnt
 cryptsetup close root
 swapoff -a
 set +x
-echo "Installation complete!"
+echo "Installation complete! You can now reboot and log into system"
