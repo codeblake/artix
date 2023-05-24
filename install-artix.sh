@@ -1,16 +1,12 @@
 #!/bin/bash
-# ==========================================================
-# Artix Linux Installation with LUKS Root Encryption & BTRFS
-# ==========================================================
-# IMPORTANT! set drive and options in CONFIG before running!
+# ======================================================
+# Install Artix Linux with LUKS Root Encryption & BTRFS
+# ======================================================
 #
-# NOTE:
-# - ROOT password is 'artix'
-# - USER password is the same as the decryption password
+#                 System Layout Example
 #
-# SYSTEM LAYOUT:
-# ----------------------------------------------------------
 # DEVICE                   LABEL   MOUNT            SIZE
+# ------------------------------------------------------
 # /dev/sda
 # ├─/dev/sda1              BOOT    /boot              1G
 # ├─/dev/sda2              SWAP    [SWAP]            16G
@@ -19,14 +15,11 @@
 #     └─@                          /
 #     └─@home                      /home
 #     └─@snapshots                 /.snapshots
-# ----------------------------------------------------------
 #
-# TODO LIST:
-# - FIXME: BIOS installation not booting
 #
-# ==========================================================
-#                         CONFIG
-# ==========================================================
+# ======================================================
+# CONFIG
+# ======================================================
 drive=/dev/DRIVE
 boot="${drive}1"
 swap="${drive}2"
@@ -34,14 +27,17 @@ root="${drive}3"
 
 timezone=Europe/London
 locale=en_GB
-hostname=artix
 user=blake
 user_groups=wheel,video,audio
+hostname=artix
+
 arch_support=true
 
-# ==========================================================
-#                     INSTALLATION
-# ==========================================================
+# ======================================================
+# INSTALLATION
+# ======================================================
+source config.sh
+
 # Ensure nothing mounted
 swapoff -a &> /dev/null
 cryptsetup close root &> /dev/null
@@ -258,13 +254,66 @@ echo "
 ======================================================================
 "
 
-# EXTRA
-source extra.sh
-[[ $arch_support == true ]] && enable_arch
+# Enable Arch repositories (extra, community & multilib)
+# https://wiki.artixlinux.org/Main/Repositories
+if [[ $arch_support == true ]]; then
+    echo "Enabling Arch repositories..."
+
+    # Package requirements
+    pacman --needed --noconfirm -Sy vim git \
+        || { echo "Error installing packages"; exit; }
+
+    # Download latest Arch mirrorlist
+    url="https://github.com/archlinux/svntogit-packages\
+/raw/packages/pacman-mirrorlist/trunk/mirrorlist"
+    curl -L "${url}" -o /mnt/etc/pacman.d/mirrorlist-arch \
+        || { echo "Error downloading Arch mirrorlist"; exit; }
+
+    # Set a region defined in 'mirrorlist-arch'
+    region="United Kingdom"
+
+    # Ensure region exists
+    grep -qw "${region}" /mnt/etc/pacman.d/mirrorlist-arch \
+        || { echo "Arch server location '${region}' not found."; exit; }
+
+    # Uncomment local servers in Arch mirrorlist
+    vim -s <(printf "/%s\nvip:s/^#//g\n:wq\n" "${region}") \
+        /mnt/etc/pacman.d/mirrorlist-arch
+
+    # Add Arch mirrorlist & servers to pacman
+    echo "
+# Arch
+[extra]
+Include = /etc/pacman.d/mirrorlist-arch
+
+[community]
+Include = /etc/pacman.d/mirrorlist-arch
+
+[multilib]
+Include = /etc/pacman.d/mirrorlist-arch
+
+[universe]
+Server = https://universe.artixlinux.org/\$arch
+Server = https://mirror1.artixlinux.org/universe/\$arch
+Server = https://mirror.pascalpuffke.de/artix-universe/\$arch
+Server = https://mirrors.qontinuum.space/artixlinux-universe/\$arch
+Server = https://mirror1.cl.netactuate.com/artix/universe/\$arch
+Server = https://ftp.crifo.org/artix-universe/\$arch
+Server = https://artix.sakamoto.pl/universe/\$arch
+" >> /mnt/etc/pacman.conf
+
+    # Download Arch Linux support
+    artix-chroot /mnt bash -c \
+                 "pacman --noconfirm -Syy artix-archlinux-support" \
+        || { echo "Error downloading artix-archlinux-support"; exit; }
+
+    echo "Arch support installation complete!"
+fi
 
 # FINISH
 umount -R /mnt
 cryptsetup close root
 swapoff -a
 set +x
+
 echo "Installation complete! You can now reboot and log into system"
