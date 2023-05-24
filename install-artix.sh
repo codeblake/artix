@@ -29,7 +29,6 @@ drive=/dev/DRIVE
 boot="${drive}1"
 swap="${drive}2"
 root="${drive}3"
-swap_size="16G"
 
 timezone=Europe/London
 locale=en_GB
@@ -69,6 +68,18 @@ while true; do
         break
     fi
 done
+
+# Use RAM size to calculate SWAP size
+# Note: if swap_size is set in CONFIG, that value will be used instead
+if [[ -z $swap_size ]]; then
+    pacman --needed --noconfirm -Sy bc
+    ram_kB=$(awk 'FNR==1 {print $2}' /proc/meminfo)
+    ram_gb=$(bc <<< "${ram_kB} / 1000^2")
+    swap_size="$(bc <<< "sqrt(${ram_gb})) * 4")G"
+fi
+
+# Check at least 1GB of swap
+[ "${ram_gb}" -lt 1 ] && { echo "ERR: not enough ram for SWAP"; exit; }
 
 # Create partitions
 boot_type="BIOS Boot"
