@@ -47,7 +47,6 @@ arch_support=true
 # ======================================================
 # INSTALLATION
 # ======================================================
-source config.sh
 
 # Ensure nothing mounted
 swapoff -a &> /dev/null
