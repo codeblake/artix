@@ -303,7 +303,7 @@ if [[ $enable_aur == true ]]; then
     # download package
     rm -rf /mnt/home/${user}/trizen &> /dev/null
     clone="git clone https://aur.archlinux.org/trizen"
-    artix-chroot /mnt bash -c "runuser -l ${user} \"${clone}\""
+    artix-chroot /mnt bash -c "runuser -l ${user} -c \"${clone}\""
 
     # build package
     build="cd /home/${user}/trizen && makepkg --noconfirm"
