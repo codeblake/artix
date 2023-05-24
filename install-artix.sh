@@ -259,7 +259,7 @@ if [[ $arch_support == true ]]; then
 
     # Uncomment local servers in Arch mirrorlist
     vim -s <(printf "/%s\nvip:s/^#//g\n:wq\n" "${region}") \
-        /mnt/etc/pacman.d/mirrorlist-arch
+        /mnt/etc/pacman.d/mirrorlist-arch &>/dev/null
 
     # Add Arch mirrorlist & servers to pacman
     echo "
