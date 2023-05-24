@@ -75,20 +75,18 @@ while true; do
     read -rp "Press ENTER to try again...";
 done
 
-# Use RAM size to calculate SWAP size
-# Note: if swap_size was set, that value will be used instead
-if [[ -z $swap_size ]]; then
-    pacman --needed --noconfirm -Sy bc
-    ram_kB=$(awk 'FNR==1 {print $2}' /proc/meminfo)
-    ram_gb=$(bc <<< "${ram_kB} / 1000^2")
-    swap_size="$(bc <<< "sqrt(${ram_gb})) * 4")G"
-fi
+# Get system RAM size
+pacman --needed --noconfirm -Sy bc
+ram_kB=$(awk 'FNR==1 {print $2}' /proc/meminfo)
+ram_gb=$(bc <<< "${ram_kB} / 1000^2")
 
-# Check at least 1GB of swap
-[ "${ram_gb}" -lt 1 ] && { echo "ERR: not enough ram for SWAP"; exit; }
+# Check there is at least 1GB RAM for swap
+[[ $ram_gb < 1 ]] && { echo "Not enough ram for SWAP"; exit; }
 
-# Set default boot size if unset
-# Note: if boot_size was set, that value will be used instead
+# Calculate SWAP size
+[[ -z $swap_size ]] && swap_size="$(bc <<< "sqrt(${ram_gb}) * 4")G"
+
+# Set BOOT size
 [[ -z $boot_size ]] && boot_size=512M
 
 # Set boot type
@@ -106,7 +104,7 @@ ROOT Partition: ${root}, Size: MAX
 !!! CAUTION: all data from ${drive} will be erased !!!
 ------------------------------------------------------
 "
-secho "Are you sure you want install?"
+echo "Are you sure you want install?"
 unset input
 read -rp "Type YES (in uppercase letters) to begin installation: " input
 [[ "${input}" != "YES" ]] && exit
