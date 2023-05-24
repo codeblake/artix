@@ -43,6 +43,7 @@ user_groups=wheel,video,audio
 hostname=artix
 
 arch_support=true
+enable_aur=true
 
 # ======================================================
 # INSTALLATION
@@ -102,8 +103,7 @@ SWAP Partition: ${swap}, Size: ${swap_size}
 ROOT Partition: ${root}, Size: MAX
 ------------------------------------------------------
 !!! CAUTION: all data from ${drive} will be erased !!!
-------------------------------------------------------
-"
+------------------------------------------------------"
 echo "Are you sure you want install?"
 unset input
 read -rp "Type YES (in uppercase letters) to begin installation: " input
@@ -133,19 +133,19 @@ swapon ${swap}
 if [ -d /sys/firmware/efi/efivars/ ]; then
     mkfs.fat -n BOOT -F 32 ${boot}
 else
-    mkfs.ext4 -L BOOT ${boot}
+    mkfs.ext4 -qL BOOT ${boot}
 fi
 
 # Make BTRFS ROOT filesystem
-mkfs.btrfs -L ROOT /dev/mapper/root
+mkfs.btrfs -qL ROOT /dev/mapper/root
 
 # Mount btrfs ROOT drive
 mount /dev/mapper/root /mnt
 
 # Create BTRFS subvolumes
-btrfs subvolume create /mnt/@
-btrfs subvolume create /mnt/@home
-btrfs subvolume create /mnt/@snapshots
+btrfs -q subvolume create /mnt/@
+btrfs -q subvolume create /mnt/@home
+btrfs -q subvolume create /mnt/@snapshots
 
 # Mount BTRFS subvolumes
 umount /mnt
@@ -182,7 +182,7 @@ basestrap /mnt \
 basestrap /mnt runit-bash-completions
 
 # Enable runit services
-services="iwd dhcpcd openntpd cronie openssh ufw dmeventd"
+services="ufw iwd dhcpcd openntpd cronie openssh dmeventd"
 for service in ${services}; do
     artix-chroot /mnt bash -c \
       "ln -sf /etc/runit/sv/${service} /etc/runit/runsvdir/default/"
@@ -315,7 +315,32 @@ Server = https://artix.sakamoto.pl/universe/\$arch
                  "pacman --noconfirm -Syy artix-archlinux-support" \
         || { echo "Error downloading artix-archlinux-support"; exit; }
 
+    # Update keys
+    artix-chroot /mnt bash -c "pacman-key --populate archlinux"
+
     echo "Arch support installation complete!"
+fi
+
+# Install AUR helper
+if [[ $enable_aur == true ]]; then
+    # install dependencies
+    deps="git pacutils perl-{libwww,term-ui,json,data-dump,lwp-protocol-https,term-readline-gnu}"
+    artix-chroot /mnt bash -c "pacman --noconfirm --needed -Sy ${deps}"
+
+    # download package
+    rm -rf /mnt/home/${user}/trizen &> /dev/null
+    clone="git clone https://aur.archlinux.org/trizen"
+    artix-chroot /mnt bash -c "runuser -l ${user} \"${clone}\""
+
+    # build package
+    build="cd /home/${user}/trizen && makepkg --noconfirm"
+    artix-chroot /mnt bash -c "runuser -l ${user} -c \"${build}\""
+
+    # add package to pacman
+    artix-chroot /mnt bash -c "pacman -U --noconfirm /home/${user}/trizen/*.zst"
+
+    # remove unnecessary files
+    rm -rf "/mnt/home/${user}/trizen"
 fi
 
 # FINISH
@@ -324,4 +349,6 @@ cryptsetup close root
 swapoff -a
 set +x
 
-echo "Installation complete! You can now reboot and log into system"
+echo "Installation complete!"
+echo "You can now reboot and log into system"
+echo "Note: AFTER reboot be sure to enable the firewall with 'ufw enable'"

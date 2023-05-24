@@ -1,6 +1,7 @@
 ======================================================
 Install Artix Linux with LUKS Root Encryption & BTRFS
 ======================================================
+Working on: UEFI
 
 Usage:
 1. IMPORTANT! configure DRIVE options in CONFIG section.
