@@ -3,8 +3,19 @@
 # Install Artix Linux with LUKS Root Encryption & BTRFS
 # ======================================================
 #
-#                 System Layout Example
+# Usage:
+# 1. IMPORTANT! configure DRIVE options in CONFIG section.
+# 2. boot up an Artix Linux live ISO installation
+# 3. login as 'root' with password 'artix'
+# 4. get the installation script onto the system
+# 5. execute script
 #
+# Notes:
+# - DECRYPTION password is set via installation
+# - default 'root' password is 'artix'
+# - USER password is the same as the DECRYPTION password
+#
+# Example System Layout:
 # DEVICE                   LABEL   MOUNT            SIZE
 # ------------------------------------------------------
 # /dev/sda
