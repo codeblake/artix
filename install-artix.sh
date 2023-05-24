@@ -8,22 +8,25 @@
 # - ROOT password is 'artix'
 # - USER password is the same as the decryption password
 #
-# EXAMPLE LAYOUT:
+# SYSTEM LAYOUT:
+# ----------------------------------------------------------
+# DEVICE                   LABEL   MOUNT            SIZE
 # /dev/sda
 # ├─/dev/sda1              BOOT    /boot              1G
 # ├─/dev/sda2              SWAP    [SWAP]            16G
-# └─/dev/sda3              LUKS
+# └─/dev/sda3              LUKS                      MAX
 #   └─/dev/mapper/root     ROOT
 #     └─@                          /
 #     └─@home                      /home
 #     └─@snapshots                 /.snapshots
+# ----------------------------------------------------------
 #
 # TODO LIST:
 # - FIXME: BIOS installation not booting
-# - FIXME: user password not begin set
 # - TODO: add arch mirrors support option
 #
-# CONFIG
+# ==========================================================
+#                         CONFIG
 # ==========================================================
 drive=/dev/DRIVE
 boot="${drive}1"
@@ -36,7 +39,8 @@ hostname=artix
 user=blake
 user_groups=wheel,video,audio
 
-# INSTALLATION
+# ==========================================================
+#                     INSTALLATION
 # ==========================================================
 # Ensure nothing mounted
 swapoff -a &> /dev/null
@@ -54,23 +58,19 @@ ping -c 3 artixlinux.org &> /dev/null \
     || { echo "No internet connection found"; exit; }
 
 # Read password
-echo "ENTER A PASSWORD
-(NOTE: password is used for drive decryption & user login)"
+echo "Enter a password (it will be used for system & user login)"
 while true; do
     read -sr -p "Password: " password
     printf "\n"
     read -sr -p "Confirm password: " password2
     printf "\n"
-    if [[ "${password}" != "${password2}" ]]; then
-        printf "Incorrect password! Press ENTER to try again...";
-        read -rn 1 ;
-    else
-        break
-    fi
+    [[ "${password}" == "${password2}" ]] && break
+    echo "Incorrect password!";
+    read -rp "Press ENTER to try again...";
 done
 
 # Use RAM size to calculate SWAP size
-# Note: if swap_size is set in CONFIG, that value will be used instead
+# Note: if swap_size was set, that value will be used instead
 if [[ -z $swap_size ]]; then
     pacman --needed --noconfirm -Sy bc
     ram_kB=$(awk 'FNR==1 {print $2}' /proc/meminfo)
@@ -81,19 +81,42 @@ fi
 # Check at least 1GB of swap
 [ "${ram_gb}" -lt 1 ] && { echo "ERR: not enough ram for SWAP"; exit; }
 
-# Create partitions
+# Set default boot size if unset
+# Note: if boot_size was set, that value will be used instead
+[[ -z $boot_size ]] && boot_size=512M
+
+# Set boot type
 boot_type="BIOS Boot"
 [ -d /sys/firmware/efi/efivars/ ] && boot_type=U
-printf ',512M,"%s",*\n,%s,S\n,+,L\n' \
-       "${boot_type}" "${swap_size}" | sfdisk -qf -X gpt ${drive}
+
+# Request confirmation
+echo "
+================ CONFIRM INSTALLATION ================
+Drive: ${drive}
+BOOT Partition: ${boot}, Size: ${boot_size}
+SWAP Partition: ${swap}, Size: ${swap_size}
+ROOT Partition: ${root}, Size: MAX
+------------------------------------------------------
+!!! CAUTION: all data from ${drive} will be erased !!!
+------------------------------------------------------
+"
+secho "Are you sure you want install?"
+unset input
+read -rp "Type YES (in uppercase letters) to begin installation: " input
+[[ "${input}" != "YES" ]] && exit
+
+# Create partitions
+printf ',%s,"%s",*\n,%s,S\n,+,L\n' \
+       "${boot_size}" "${boot_type}" "${swap_size}" \
+    | sfdisk -qf -X gpt ${drive}
 
 # Create encrypted drive
 echo "${password}" | cryptsetup --type luks2 \
-                                   --label LUKS \
-                                   --cipher aes-xts-plain64 \
-                                   --hash sha512 \
-                                   --use-random \
-                                   luksFormat "${root}"
+                                --label LUKS \
+                                --cipher aes-xts-plain64 \
+                                --hash sha512 \
+                                --use-random \
+                                luksFormat "${root}"
 
 # Open encrypted drive
 echo "${password}" | cryptsetup luksOpen ${root} root
@@ -122,11 +145,11 @@ btrfs subvolume create /mnt/@snapshots
 
 # Mount BTRFS subvolumes
 umount /mnt
-options=noatime,space_cache=v2,compress=zstd,ssd,discard=async
-mount -o ${options},subvol=@ /dev/mapper/root /mnt
+options="noatime,space_cache=v2,compress=zstd,ssd,discard=async"
+mount -o "${options},subvol=@" /dev/mapper/root /mnt
 mkdir /mnt/{boot,home,.snapshots}
-mount -o ${options},subvol=@home /dev/mapper/root /mnt/home
-mount -o ${options},subvol=@snapshots /dev/mapper/root /mnt/.snapshots
+mount -o "${options},subvol=@home" /dev/mapper/root /mnt/home
+mount -o "${options},subvol=@snapshots" /dev/mapper/root /mnt/.snapshots
 chmod 750 /mnt/.snapshots
 
 # Mount boot partition.
