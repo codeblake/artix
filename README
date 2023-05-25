@@ -30,35 +30,35 @@ SYSTEM LAYOUT:
 +---------------------------------------------------+
 
 CONFIGURATION:
-- drive :the drive to perform the installation
+- drive: the drive to perform the installation.
+- boot: the boot partition.
+- swap: the swap partition.
+- root: the root partition (which will be encrypted).
 
-- boot: the boot partition
-
-- swap: the swap partition
-
-- root: the root partition (which will be encrypted)
-
-- timezone: a timezone (defined in '/usr/share/zoneinfo/')
-
-- locale: a locale (defined in '/etc/locale.gen')
-
-- user: the main user of the system
-
-- user_groups: the groups for 'user' belongs to
-
-- hostname: the hostname of the system
-
-- arch_support: whether enable Arch repositories
-  (enables extra, community, & multilib)
-
-- enable_aur: specifies whether to install an AUR helper
-  (uses trizen as AUR helper)
-
-- swap_size: Defaults to formula, but can be overwritten
+- swap_size: defaults to auto, but can be overwritten
   e.g: 'swap_size=8G'.
 
 - boot_size: Defaults to 512M. Can be overwritten
-  in CONFIG e.g: boot_size=1G.
+  e.g: 'boot_size=1G'.
+
+- timezone: a timezone (defined in '/usr/share/zoneinfo/').
+- locale: a locale (defined in '/etc/locale.gen').
+- user: the main user of the system.
+- user_groups: the groups 'user' belongs to.
+- hostname: the hostname of the system.
+
+- arch_support: whether to enable Arch repositories.
+  (enables extra, community, & multilib)
+
+- enable_aur: specifies whether to install an AUR helper.
+  (installs trizen AUR helper)
+
+- autologin: automatically login to user after unlocking drive.
+  User password must match decryption password; this is
+  the default behaviour when installing, however if you
+  update your password be sure to update the decryption
+  password to match, or remove '--autologin USER' from
+  '/etc/runit/sv/agetty-tty1/conf' to disable this behaviour.
 
 NOTES
 Last tested using 'artix-base-runit-20230501-x86_64.iso' on UEFI
