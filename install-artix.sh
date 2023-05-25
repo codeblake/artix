@@ -8,6 +8,7 @@ drive=/dev/DRIVE
 boot="${drive}1"
 swap="${drive}2"
 root="${drive}3"
+swap_size=auto
 
 timezone=Europe/London
 locale=en_GB
@@ -17,6 +18,7 @@ hostname=artix
 
 arch_support=true
 enable_aur=true
+autologin=true
 
 # ======================================================
 # INSTALLATION
@@ -58,7 +60,8 @@ ram_gb=$(bc <<< "${ram_kB} / 1000^2")
 [[ $ram_gb < 1 ]] && { echo "Not enough ram for SWAP"; exit; }
 
 # Calculate SWAP size
-[[ -z $swap_size ]] && swap_size="$(bc <<< "sqrt(${ram_gb}) * 4")G"
+[[ -z $swap_size || $swap_size == auto ]] \
+    && swap_size="$(bc <<< "sqrt(${ram_gb}) * 4")G"
 
 # Set BOOT size
 [[ -z $boot_size ]] && boot_size=512M
@@ -190,11 +193,11 @@ echo ${hostname} > /mnt/etc/hostname
 # Set root password
 artix-chroot /mnt bash -c "echo root:artix | chpasswd"
 
-# add new user
+# Add new user
 artix-chroot /mnt bash -c "useradd -mG ${user_groups} ${user}"
 artix-chroot /mnt bash -c "echo \"${user}:${password}\" | chpasswd"
 
-# set user privileges
+# Set user privileges
 echo "
 Cmnd_Alias STAT = /usr/bin/sv status,/usr/bin/ufw status
 Cmnd_Alias PACMAN = /usr/bin/checkupdates
@@ -203,6 +206,12 @@ Defaults pwfeedback
 %wheel ALL=(ALL) ALL
 ${user} ALL=(ALL) NOPASSWD: PACMAN,REBOOT,STAT
 " >> /mnt/etc/sudoers
+
+# Add user to autologin (note: password must match decryption password)
+if [[ $autologin == true ]]; then
+    sed "s/GETTY_ARGS=\".*\"/GETTY_ARGS=\"--noclear --autologin ${user}\"/" \
+        -i /mnt/etc/runit/sv/agetty-tty1/conf
+fi
 
 # Configure mkinitcpio.conf
 modules="btrfs"
