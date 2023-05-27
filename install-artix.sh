@@ -213,10 +213,15 @@ if [[ $autologin == true ]]; then
         -i /mnt/etc/runit/sv/agetty-tty1/conf
 fi
 
-# Add pacman options
+# Add PACMAN download style
 pac_options=ILoveCandy
 sed "s/# Misc options/# Misc options\n${pac_options}/g" \
     -i /mnt/etc/pacman.conf
+
+# Set MAKEFLAGS to match CPU threads for faster compiling
+cp /etc/makepkg.conf /etc/makepkg.conf.bak
+sed 's/#MAKEFLAGS=\".*\"/MAKEFLAGS=\"-j$(nproc)\"' \
+    -i /etc/makepkg.conf
 
 # Configure mkinitcpio.conf
 modules="btrfs"
