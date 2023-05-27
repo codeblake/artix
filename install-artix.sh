@@ -213,6 +213,11 @@ if [[ $autologin == true ]]; then
         -i /mnt/etc/runit/sv/agetty-tty1/conf
 fi
 
+# Add pacman options
+pac_options=ILoveCandy
+sed "s/# Misc options/# Misc options\n${pac_options}/g" \
+    -i /mnt/etc/pacman.conf
+
 # Configure mkinitcpio.conf
 modules="btrfs"
 hooks="base udev autodetect modconf kms keyboard keymap block encrypt resume filesystems fsck"
