@@ -151,14 +151,14 @@ basestrap /mnt \
           git vim man-db man-pages ${ucode}
 # Install services
 basestrap /mnt \
-          cryptsetup-runit glibc-runit device-mapper-runit \
+          cryptsetup-runit \
           iwd-runit dhcpcd-runit openntpd-runit \
           cronie-runit openssh-runit ufw-runit
 # Extra packages
 basestrap /mnt runit-bash-completions
 
 # Enable runit services
-services="ufw iwd dhcpcd openntpd cronie openssh dmeventd"
+services="ufw iwd dhcpcd openntpd cronie openssh"
 for service in ${services}; do
     artix-chroot /mnt bash -c \
       "ln -sf /etc/runit/sv/${service} /etc/runit/runsvdir/default/"
