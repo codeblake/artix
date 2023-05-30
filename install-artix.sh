@@ -143,19 +143,21 @@ ucode=amd-ucode
 [[ $(grep "vendor_id" /proc/cpuinfo) == *Intel* ]] && ucode=intel-ucode
 
 # Install base packages
-basestrap /mnt base base-devel runit elogind-runit
-basestrap /mnt linux linux-firmware
 basestrap /mnt \
+          base base-devel runit elogind-runit
+
+# Install Linux & utilities
+basestrap /mnt linux linux-firmware \
           grub efibootmgr os-prober \
           btrfs-progs mkinitcpio-nfs-utils \
-          git vim man-db man-pages ${ucode}
-# Install services
+          git vim man-db man-pages ${ucode} \
+          runit-bash-completions
+
+# Install runit services
 basestrap /mnt \
           cryptsetup-runit \
           iwd-runit dhcpcd-runit openntpd-runit \
           cronie-runit openssh-runit ufw-runit
-# Extra packages
-basestrap /mnt runit-bash-completions
 
 # Enable runit services
 services="ufw iwd dhcpcd openntpd cronie openssh"
