@@ -57,7 +57,7 @@ ram_kB=$(awk 'FNR==1 {print $2}' /proc/meminfo)
 ram_gb=$(bc <<< "${ram_kB} / 1000^2")
 
 # Check there is at least 1GB RAM for swap
-[[ $ram_gb < 1 ]] && { echo "Not enough ram for SWAP"; exit; }
+[[ $ram_gb -lt 1 ]] && { echo "Not enough ram for SWAP"; exit; }
 
 # Calculate SWAP size
 [[ -z $swap_size || $swap_size == auto ]] \
@@ -220,8 +220,8 @@ sed "s/# Misc options/# Misc options\n${pac_options}/g" \
 
 # Set MAKEFLAGS to match CPU threads for faster compiling
 cp /etc/makepkg.conf /etc/makepkg.conf.bak
-sed 's/#MAKEFLAGS=\".*\"/MAKEFLAGS=\"-j$(nproc)\"' \
-    -i /etc/makepkg.conf
+sed "s/#MAKEFLAGS=\".*\"/MAKEFLAGS=\"-j$(nproc)\"/" \
+    -i /mnt/etc/makepkg.conf
 
 # Configure mkinitcpio.conf
 modules="btrfs"
