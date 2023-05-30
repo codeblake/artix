@@ -147,7 +147,8 @@ basestrap /mnt \
           base base-devel runit elogind-runit
 
 # Install Linux & utilities
-basestrap /mnt linux linux-firmware \
+basestrap /mnt \
+          linux linux-firmware \
           grub efibootmgr os-prober \
           btrfs-progs mkinitcpio-nfs-utils \
           git vim man-db man-pages ${ucode} \
