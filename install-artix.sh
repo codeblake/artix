@@ -13,7 +13,7 @@ swap_size=auto
 timezone=Europe/London
 locale=en_GB
 user=blake
-user_groups=wheel,video,audio
+user_groups=wheel,video,audio,input,seatd
 hostname=artix
 
 arch_support=true
@@ -144,7 +144,7 @@ ucode=amd-ucode
 
 # Install base packages
 basestrap /mnt \
-          base base-devel runit elogind-runit
+          base base-devel runit seatd-runit
 
 # Install Linux & utilities
 basestrap /mnt \
