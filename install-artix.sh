@@ -289,20 +289,8 @@ if [[ $arch_support == true ]]; then
 [extra]
 Include = /etc/pacman.d/mirrorlist-arch
 
-[community]
-Include = /etc/pacman.d/mirrorlist-arch
-
 [multilib]
 Include = /etc/pacman.d/mirrorlist-arch
-
-[universe]
-Server = https://universe.artixlinux.org/\$arch
-Server = https://mirror1.artixlinux.org/universe/\$arch
-Server = https://mirror.pascalpuffke.de/artix-universe/\$arch
-Server = https://mirrors.qontinuum.space/artixlinux-universe/\$arch
-Server = https://mirror1.cl.netactuate.com/artix/universe/\$arch
-Server = https://ftp.crifo.org/artix-universe/\$arch
-Server = https://artix.sakamoto.pl/universe/\$arch
 " >> /mnt/etc/pacman.conf
 
     # Download Arch Linux support
