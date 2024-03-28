@@ -13,7 +13,7 @@ swap_size=auto
 timezone=Europe/London
 locale=en_GB
 user=blake
-user_groups=wheel,video,audio,input,seatd
+user_groups=wheel,video,audio,input,seat
 hostname=artix
 
 arch_support=true
