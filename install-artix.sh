@@ -89,6 +89,9 @@ unset input
 read -rp "Type YES (in uppercase letters) to begin installation: " input
 [[ "${input}" != "YES" ]] && exit
 
+# Wipe file-system
+wipefs -a "${drive}"
+
 # Create partitions
 printf ',%s,"%s",*\n,%s,S\n,+,L\n' \
        "${boot_size}" "${boot_type}" "${swap_size}" \
