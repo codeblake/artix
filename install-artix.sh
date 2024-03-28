@@ -321,28 +321,8 @@ fi
 
 # Install AUR helper
 if [[ $enable_aur == true ]]; then
-    if [[ $arch_support == true ]]; then
-        artix-chroot /mnt bash -c "pacman --noconfirm -Syy trizen"
-    else
-        # install dependencies
-        deps="git pacutils perl-{libwww,term-ui,json,data-dump,lwp-protocol-https,term-readline-gnu}"
-        artix-chroot /mnt bash -c "pacman --noconfirm --needed -Sy ${deps}"
-
-        # download package
-        rm -rf /mnt/home/${user}/trizen &> /dev/null
-        clone="git clone https://aur.archlinux.org/trizen"
-        artix-chroot /mnt bash -c "runuser -l ${user} -c \"${clone}\""
-
-        # build package
-        build="cd /home/${user}/trizen && makepkg --noconfirm"
-        artix-chroot /mnt bash -c "runuser -l ${user} -c \"${build}\""
-
-        # add package to pacman
-        artix-chroot /mnt bash -c "pacman -U --noconfirm /home/${user}/trizen/*.zst"
-
-        # remove unnecessary files
-        rm -rf "/mnt/home/${user}/trizen"
-    fi
+    artix-chroot /mnt bash -c "pacman --noconfirm -Syy trizen" \
+        || { echo "Error downloading trizen AUR helper"; exit; }
     echo "AUR helper installation complete!"
 fi
 
