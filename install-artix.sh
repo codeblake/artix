@@ -61,14 +61,14 @@ ram_kB=$(awk 'FNR==1 {print $2}' /proc/meminfo)
 ram_gb=$(bc <<< "${ram_kB} / 1000^2")
 
 # Check there is at least 1GB RAM for swap
-[[ $ram_gb -lt 1 ]] && { echo "Not enough ram for SWAP"; exit; }
+[[ "${ram_gb}" -lt 1 ]] && { echo "Not enough ram for SWAP"; exit; }
 
 # Calculate SWAP size
-[[ -z $swap_size || $swap_size == auto ]] \
+[[ -z "${swap_size}" || "${swap_size}" == auto ]] \
     && swap_size="$(bc <<< "sqrt(${ram_gb}) * 4")G"
 
 # Set BOOT size
-[[ -z $boot_size ]] && boot_size=512M
+[[ -z "${boot_size}" ]] && boot_size=512M
 
 # Set boot type
 boot_type="BIOS Boot"
@@ -164,11 +164,11 @@ basestrap /mnt \
           linux linux-firmware \
           grub efibootmgr os-prober \
           btrfs-progs mkinitcpio-nfs-utils \
-          git vim man-db man-pages ${ucode} \
+          git vim man-db man-pages "${ucode}" \
           runit-bash-completions
 
 # Install runit services
-if [[ $encrypt == true ]]; then
+if [[ "${encrypt}" == true ]]; then
     basestrap /mnt cryptsetup-runit
 fi
 
@@ -178,7 +178,7 @@ basestrap /mnt \
 
 # Enable runit services
 services="ufw iwd dhcpcd openntpd cronie openssh"
-for service in ${services}; do
+for service in "${services}"; do
     artix-chroot /mnt bash -c \
       "ln -sf /etc/runit/sv/${service} /etc/runit/runsvdir/default/"
 done
@@ -207,7 +207,7 @@ artix-chroot /mnt bash -c "hwclock -w"
 echo "export EDITOR=vim" >> /mnt/etc/profile
 
 # Set hostname
-echo ${hostname} > /mnt/etc/hostname
+echo "${hostname}" > /mnt/etc/hostname
 
 # Set root password
 artix-chroot /mnt bash -c "echo root:artix | chpasswd"
@@ -227,7 +227,7 @@ ${user} ALL=(ALL) NOPASSWD: PACMAN,REBOOT,STAT
 " >> /mnt/etc/sudoers
 
 # Add user to autologin (note: password must match decryption password)
-if [[ $autologin == true ]]; then
+if [[ "${autologin}" == true ]]; then
     sed "s/GETTY_ARGS=\".*\"/GETTY_ARGS=\"--noclear --autologin ${user}\"/" \
         -i /mnt/etc/runit/sv/agetty-tty1/conf
 fi
@@ -246,7 +246,7 @@ sed "s/#MAKEFLAGS=\".*\"/MAKEFLAGS=\"-j$(nproc)\"/" \
 modules="btrfs"
 sed "s/^MODULES=(.*)/MODULES=(${modules})/" -i /mnt/etc/mkinitcpio.conf
 
-if [[ $encrypt == true ]]; then
+if [[ "${encrypt}" == true ]]; then
     hooks="base udev autodetect modconf kms keyboard keymap block encrypt resume filesystems fsck"
     sed "s/^HOOKS=(.*)/HOOKS=(${hooks})/" -i /mnt/etc/mkinitcpio.conf
 fi
@@ -255,7 +255,7 @@ fi
 artix-chroot /mnt bash -c "mkinitcpio -p linux"
 
 # Configure GRUB
-if [[ $encrypt == true ]]; then
+if [[ "${encrypt}" == true ]]; then
     devices="resume=LABEL=SWAP cryptdevice=LABEL=LUKS:root"
     grub_cmds="loglevel=3 net.iframes=0 quiet splash ${devices}"
 
@@ -280,7 +280,7 @@ echo "
 
 # Enable Arch repositories (extra, community & multilib)
 # https://wiki.artixlinux.org/Main/Repositories
-if [[ $arch_support == true ]]; then
+if [[ "${arch_support}" == true ]]; then
     echo "Enabling Arch repositories..."
 
     # Package requirements
@@ -326,7 +326,7 @@ Include = /etc/pacman.d/mirrorlist-arch
 fi
 
 # Install AUR helper
-if [[ $enable_aur == true ]]; then
+if [[ "${enable_aur}" == true ]]; then
     artix-chroot /mnt bash -c "pacman --noconfirm -Syy trizen" \
         || { echo "Error downloading trizen AUR helper"; exit; }
     echo "AUR helper installation complete!"
@@ -334,7 +334,7 @@ fi
 
 # FINISH
 umount -R /mnt
-[[ $encrypt == true ]] && cryptsetup close root
+[[ "${encrypt}" == true ]] && cryptsetup close root
 swapoff -a
 set +x
 
