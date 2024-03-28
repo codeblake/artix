@@ -144,7 +144,7 @@ ucode=amd-ucode
 
 # Install base packages
 basestrap /mnt \
-          base base-devel runit seatd-runit
+          base base-devel runit seatd-runit pam_rundir
 
 # Install Linux & utilities
 basestrap /mnt \
