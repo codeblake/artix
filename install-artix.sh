@@ -178,7 +178,8 @@ basestrap /mnt \
 
 # Enable runit services
 services="ufw iwd dhcpcd openntpd cronie openssh"
-for service in "${services}"; do
+# NOTE: do not quote 'services' variable or space is ignored
+for service in ${services}; do
     artix-chroot /mnt bash -c \
       "ln -sf /etc/runit/sv/${service} /etc/runit/runsvdir/default/"
 done
