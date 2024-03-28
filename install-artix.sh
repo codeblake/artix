@@ -109,24 +109,27 @@ if [[ $encrypt == true ]]; then
 
     # Open encrypted drive
     echo "${password}" | cryptsetup luksOpen ${root} root
+
+    # Change root path to mapper
+    root="/dev/mapper/root"
 fi
 
 # enable SWAP partition
-mkswap -L SWAP ${swap}
-swapon ${swap}
+mkswap -L SWAP "${swap}"
+swapon "${swap}"
 
 # Make BOOT filesystem
 if [ -d /sys/firmware/efi/efivars/ ]; then
-    mkfs.fat -n BOOT -F 32 ${boot}
+    mkfs.fat -n BOOT -F 32 "${boot}"
 else
-    mkfs.ext4 -qL BOOT ${boot}
+    mkfs.ext4 -qL BOOT "${boot}"
 fi
 
 # Make BTRFS ROOT filesystem
-mkfs.btrfs -qL ROOT /dev/mapper/root
+mkfs.btrfs -qL ROOT "${root}"
 
 # Mount btrfs ROOT drive
-mount /dev/mapper/root /mnt
+mount "${root}" /mnt
 
 # Create BTRFS subvolumes
 btrfs -q subvolume create /mnt/@
@@ -136,14 +139,14 @@ btrfs -q subvolume create /mnt/@snapshots
 # Mount BTRFS subvolumes
 umount /mnt
 options="noatime,space_cache=v2,compress=zstd,ssd,discard=async"
-mount -o "${options},subvol=@" /dev/mapper/root /mnt
+mount -o "${options},subvol=@" "${root}" /mnt
 mkdir /mnt/{boot,home,.snapshots}
-mount -o "${options},subvol=@home" /dev/mapper/root /mnt/home
-mount -o "${options},subvol=@snapshots" /dev/mapper/root /mnt/.snapshots
+mount -o "${options},subvol=@home" "${root}" /mnt/home
+mount -o "${options},subvol=@snapshots" "${root}" /mnt/.snapshots
 chmod 750 /mnt/.snapshots
 
 # Mount boot partition.
-mount ${boot} /mnt/boot
+mount "${boot}" /mnt/boot
 
 # Sync packages
 pacman -Syy
