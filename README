@@ -15,7 +15,7 @@ NOTES:
 - default 'root' password is 'artix'
 - USER password is the same as the DECRYPTION password
 
-SYSTEM LAYOUT:
+EXAMPLE SYSTEM LAYOUT:
 +---------------------------------------------------+
 | Device               | Label | Mount       | Size |
 |---------------------------------------------------|
@@ -61,4 +61,4 @@ CONFIGURATION:
   '/etc/runit/sv/agetty-tty1/conf' to disable this behaviour.
 
 NOTES
-Last tested using 'artix-base-runit-20230501-x86_64.iso' on UEFI
+Last tested using 'artix-base-runit-20230814-x86_64.iso' on UEFI
