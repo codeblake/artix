@@ -2,22 +2,26 @@
 # Installs Artix Linux With LUKS Root Encryption & BTRFS
 # See README for further details
 # ======================================================
-# CONFIG
+# CONFIGURATION
 # ======================================================
+# Drive
 drive=/dev/DRIVE
 boot="${drive}1"
 swap="${drive}2"
 root="${drive}3"
 swap_size=auto
 
+# System
 timezone=Europe/London
 locale=en_GB
 user=blake
 user_groups=wheel,video,audio,input,seat
 hostname=artix
 
-arch_support=true
-enable_aur=true
+# Features
+encrypt=false
+arch_support=false
+enable_aur=false
 autologin=true
 
 # ======================================================
@@ -40,7 +44,7 @@ ping -c 3 artixlinux.org &> /dev/null \
     || { echo "No internet connection found"; exit; }
 
 # Read password
-echo "Enter a password (it will be used for system & user login)"
+echo "Enter a password for ${user} (also used for encryption if enabled)"
 while true; do
     read -sr -p "Password: " password
     printf "\n"
@@ -90,16 +94,19 @@ printf ',%s,"%s",*\n,%s,S\n,+,L\n' \
        "${boot_size}" "${boot_type}" "${swap_size}" \
     | sfdisk -qf -X gpt ${drive}
 
-# Create encrypted drive
-echo "${password}" | cryptsetup --type luks2 \
-                                --label LUKS \
-                                --cipher aes-xts-plain64 \
-                                --hash sha512 \
-                                --use-random \
-                                luksFormat "${root}"
+# Encryption setup
+if [[ $encrypt == true ]]; then
+    # Create encrypted drive
+    echo "${password}" | cryptsetup --type luks2 \
+                                    --label LUKS \
+                                    --cipher aes-xts-plain64 \
+                                    --hash sha512 \
+                                    --use-random \
+                                    luksFormat "${root}"
 
-# Open encrypted drive
-echo "${password}" | cryptsetup luksOpen ${root} root
+    # Open encrypted drive
+    echo "${password}" | cryptsetup luksOpen ${root} root
+fi
 
 # enable SWAP partition
 mkswap -L SWAP ${swap}
@@ -155,8 +162,11 @@ basestrap /mnt \
           runit-bash-completions
 
 # Install runit services
+if [[ $encrypt == true ]]; then
+    basestrap /mnt cryptsetup-runit
+fi
+
 basestrap /mnt \
-          cryptsetup-runit \
           iwd-runit dhcpcd-runit openntpd-runit \
           cronie-runit openssh-runit ufw-runit
 
@@ -204,7 +214,7 @@ artix-chroot /mnt bash -c "echo \"${user}:${password}\" | chpasswd"
 echo "
 Cmnd_Alias STAT = /usr/bin/sv status,/usr/bin/ufw status
 Cmnd_Alias PACMAN = /usr/bin/checkupdates
-Cmnd_Alias REBOOT = /sbin/halt,/sbin/reboot
+Cmnd_Alias REBOOT = /bin/halt,/bin/reboot
 Defaults pwfeedback
 %wheel ALL=(ALL) ALL
 ${user} ALL=(ALL) NOPASSWD: PACMAN,REBOOT,STAT
@@ -228,19 +238,24 @@ sed "s/#MAKEFLAGS=\".*\"/MAKEFLAGS=\"-j$(nproc)\"/" \
 
 # Configure mkinitcpio.conf
 modules="btrfs"
-hooks="base udev autodetect modconf kms keyboard keymap block encrypt resume filesystems fsck"
 sed "s/^MODULES=(.*)/MODULES=(${modules})/" -i /mnt/etc/mkinitcpio.conf
-sed "s/^HOOKS=(.*)/HOOKS=(${hooks})/" -i /mnt/etc/mkinitcpio.conf
+
+if [[ $encrypt == true ]]; then
+    hooks="base udev autodetect modconf kms keyboard keymap block encrypt resume filesystems fsck"
+    sed "s/^HOOKS=(.*)/HOOKS=(${hooks})/" -i /mnt/etc/mkinitcpio.conf
+fi
 
 # Rebuild ram-disk environment for Linux kernel
 artix-chroot /mnt bash -c "mkinitcpio -p linux"
 
-# CONFIGURE GRUB
-devices="resume=LABEL=SWAP cryptdevice=LABEL=LUKS:root"
-grub_cmds="loglevel=3 net.iframes=0 quiet splash ${devices}"
+# Configure GRUB
+if [[ $encrypt == true ]]; then
+    devices="resume=LABEL=SWAP cryptdevice=LABEL=LUKS:root"
+    grub_cmds="loglevel=3 net.iframes=0 quiet splash ${devices}"
 
-sed "s/^GRUB_CMDLINE_LINUX_DEFAULT=.*$/GRUB_CMDLINE_LINUX_DEFAULT=\"${grub_cmds}\"/" \
-    -i /mnt/etc/default/grub
+    sed "s/^GRUB_CMDLINE_LINUX_DEFAULT=.*$/GRUB_CMDLINE_LINUX_DEFAULT=\"${grub_cmds}\"/" \
+        -i /mnt/etc/default/grub
+fi
 
 # install grub
 if [ -d /sys/firmware/efi/efivars/ ]; then
@@ -333,7 +348,7 @@ fi
 
 # FINISH
 umount -R /mnt
-cryptsetup close root
+[[ $encrypt == true ]] && cryptsetup close root
 swapoff -a
 set +x
 
