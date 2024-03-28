@@ -252,9 +252,9 @@ artix-chroot /mnt bash -c "grub-install ${grub_options}"
 artix-chroot /mnt bash -c "grub-mkconfig -o /boot/grub/grub.cfg"
 
 echo "
-======================================================================
-                    MAIN INSTALLATION COMPLETE!
-======================================================================
+----------------------------------------------------------------------
+                    Main Installation Complete
+----------------------------------------------------------------------
 "
 
 # Enable Arch repositories (extra, community & multilib)
@@ -337,6 +337,10 @@ cryptsetup close root
 swapoff -a
 set +x
 
-echo "Installation complete!"
+echo "
+======================================================================
+                        Installation Finished
+======================================================================
+"
 echo "You can now reboot and log into system"
-echo "Note: AFTER reboot be sure to enable the firewall with 'ufw enable'"
+echo "NOTE: AFTER reboot be sure to enable the firewall with 'ufw enable'"
