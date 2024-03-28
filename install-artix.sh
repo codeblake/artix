@@ -5,7 +5,7 @@
 # CONFIGURATION
 # ======================================================
 # Drive
-drive=/dev/DRIVE
+drive="/dev/DRIVE"
 boot="${drive}1"
 swap="${drive}2"
 root="${drive}3"
@@ -126,7 +126,7 @@ else
 fi
 
 # Make BTRFS ROOT filesystem
-mkfs.btrfs -qL ROOT "${root}"
+mkfs.btrfs -qfL ROOT "${root}"
 
 # Mount btrfs ROOT drive
 mount "${root}" /mnt
