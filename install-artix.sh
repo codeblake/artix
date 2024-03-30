@@ -318,7 +318,7 @@ Include = /etc/pacman.d/mirrorlist-arch
     # Download Arch Linux support
     artix-chroot /mnt bash -c \
                  "pacman --noconfirm -Syy artix-archlinux-support" \
-        || { echo "Error downloading artix-archlinux-support"; exit; }
+        || { echo "Error installing artix-archlinux-support"; exit; }
 
     # Update keys
     artix-chroot /mnt bash -c "pacman-key --populate archlinux"
@@ -329,7 +329,7 @@ fi
 # Install AUR helper
 if [[ "${enable_aur}" == true ]]; then
     artix-chroot /mnt bash -c "pacman --noconfirm -Syy trizen" \
-        || { echo "Error downloading trizen AUR helper"; exit; }
+        || { echo "Error installing trizen AUR helper"; exit; }
     echo "AUR helper installation complete!"
 fi
 
