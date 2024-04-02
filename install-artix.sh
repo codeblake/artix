@@ -23,7 +23,7 @@ hostname=ArtixPC
 
 # Features
 autologin=true
-encrypt=false
+encrypt=true
 arch_support=false
 enable_aur=false
 
@@ -102,6 +102,7 @@ ROOT Partition: ${root}, Size: MAX
 Firmware: ${firmware}
 ------------------------------------------------------
 Features: ${features}
+------------------------------------------------------
 !!! CAUTION: ALL data from ${drive} will be erased !!!
 ------------------------------------------------------"
 echo "Are you sure you want install?"
