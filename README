@@ -41,6 +41,9 @@ CONFIGURATION:
 - boot_size: defaults to 512M. Can be overwritten
   e.g: 'boot_size=1G'.
 
+- firmware: install for uefi or bios systems
+  e.g: 'firmware=uefi'.
+
 - timezone: a timezone (defined in '/usr/share/zoneinfo/').
 - locale: a locale (defined in '/etc/locale.gen').
 - user: the main user of the system.

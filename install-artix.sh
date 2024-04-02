@@ -10,6 +10,7 @@ boot="${drive}1"
 swap="${drive}2"
 root="${drive}3"
 swap_size=auto
+firmware=bios
 
 # System
 timezone=Europe/London
@@ -71,18 +72,37 @@ ram_gb=$(bc <<< "${ram_kB} / 1000^2")
 [[ -z "${boot_size}" ]] && boot_size=512M
 
 # Set boot type
-boot_type="BIOS Boot"
-[ -d /sys/firmware/efi/efivars/ ] && boot_type=U
+if [[ $firmware == bios ]]; then
+    boot_type="BIOS Boot"
+else
+    if [[ ! -d /sys/firmware/efi/efivars/ ]]; then
+        echo "Error EFI is not supported on this machine"
+        exit
+    fi
+    boot_type=U
+fi
 
 # Request confirmation
+echo "Selected drive: "
+df -h ${drive}
+
+features=""
+[[ $encrypt == true ]] && features+="encrypt "
+[[ $arch_support == true ]] && features+="arch_support "
+[[ $enable_aur == true ]] && features+="enable_aur "
+[[ $autologin == true ]] && features+="autologin "
+
+drive_size=$(df -h "${drive}" | awk 'NR==2 {print $2}')
 echo "
 ================ CONFIRM INSTALLATION ================
-Drive: ${drive}
+Drive: ${drive} (size: ${drive_size})
 BOOT Partition: ${boot}, Size: ${boot_size}
 SWAP Partition: ${swap}, Size: ${swap_size}
 ROOT Partition: ${root}, Size: MAX
+Firmware: ${firmware}
 ------------------------------------------------------
-!!! CAUTION: all data from ${drive} will be erased !!!
+Features: ${features}
+!!! CAUTION: ALL data from ${drive} will be erased !!!
 ------------------------------------------------------"
 echo "Are you sure you want install?"
 unset input
@@ -119,7 +139,7 @@ mkswap -L SWAP "${swap}"
 swapon "${swap}"
 
 # Make BOOT filesystem
-if [ -d /sys/firmware/efi/efivars/ ]; then
+if [[ $firmware == uefi ]]; then
     mkfs.fat -n BOOT -F 32 "${boot}"
 else
     mkfs.ext4 -qL BOOT "${boot}"
@@ -265,11 +285,12 @@ if [[ "${encrypt}" == true ]]; then
 fi
 
 # install grub
-if [ -d /sys/firmware/efi/efivars/ ]; then
+if [[ $firmware == uefi ]]; then
     grub_options="--target=x86_64-efi --efi-directory=/boot --bootloader-id=artix"
 else
     grub_options="--recheck ${drive}"
 fi
+
 artix-chroot /mnt bash -c "grub-install ${grub_options}"
 artix-chroot /mnt bash -c "grub-mkconfig -o /boot/grub/grub.cfg"
 
