@@ -10,9 +10,12 @@ boot="${drive}1"
 swap="${drive}2"
 root="${drive}3"
 swap_size=auto
+boot_size=512M
 
 # NOTE: BIOS NOT CURRENTLY WORKING
 firmware=uefi
+# When duel-booting, use a shared boot partition
+duel_boot=true
 
 # System
 timezone=Europe/London
@@ -70,8 +73,11 @@ ram_gb=$(bc <<< "${ram_kB} / 1000^2")
 [[ -z "${swap_size}" || "${swap_size}" == auto ]] \
     && swap_size="$(bc <<< "sqrt(${ram_gb}) * 4")G"
 
-# Set BOOT size
-[[ -z "${boot_size}" ]] && boot_size=512M
+# Get boot size if using an already created partition
+# (note: used for prompt confirmation)
+if [[ $duel_boot == true ]]; then
+    boot_size=$(df -h "${boot}" | awk 'NR==2 {print $2}')
+fi
 
 # Set boot type
 if [[ $firmware == uefi ]]; then
@@ -92,6 +98,7 @@ features=""
 [[ $arch_support == true ]] && features+="arch_support "
 [[ $enable_aur == true ]] && features+="enable_aur "
 [[ $autologin == true ]] && features+="autologin "
+[[ $duel_boot == true ]] && features+="duel_boot "
 
 echo "
 ================ CONFIRM INSTALLATION ================
@@ -105,6 +112,10 @@ Features: ${features}
 ------------------------------------------------------
 !!! CAUTION: ALL data from ${drive} will be erased !!!
 ------------------------------------------------------"
+if [[ $duel_boot == true ]]; then
+    echo "Note: Installing GRUB onto ${boot} will NOT erase drive."
+fi
+
 echo "Are you sure you want install?"
 unset input
 read -rp "Type YES (in uppercase letters) to begin installation: " input
@@ -114,9 +125,16 @@ read -rp "Type YES (in uppercase letters) to begin installation: " input
 wipefs -a "${drive}"
 
 # Create partitions
-printf ',%s,"%s",*\n,%s,S\n,+,L\n' \
-       "${boot_size}" "${boot_type}" "${swap_size}" \
-    | sfdisk -qf -X gpt ${drive}
+if [[ $duel_boot == true ]]; then
+    # create swap & root partition
+    printf ',%s,S\n,+,L\n' "${swap_size}" \
+        | sfdisk -qf -X gpt ${drive}
+else
+    # create boot, swap, & root partition
+    printf ',%s,"%s",*\n,%s,S\n,+,L\n' \
+           "${boot_size}" "${boot_type}" "${swap_size}" \
+        | sfdisk -qf -X gpt ${drive}
+fi
 
 # Encryption setup
 if [[ $encrypt == true ]]; then
@@ -140,10 +158,12 @@ mkswap -L SWAP "${swap}"
 swapon "${swap}"
 
 # Make BOOT filesystem
-if [[ $firmware == uefi ]]; then
-    mkfs.fat -n BOOT -F 32 "${boot}"
-else
-    mkfs.ext4 -qL BOOT "${boot}"
+if [[ $duel_boot == false ]]; then
+    if [[ $firmware == uefi ]]; then
+        mkfs.fat -n BOOT -F 32 "${boot}"
+    else
+        mkfs.ext4 -qL BOOT "${boot}"
+    fi
 fi
 
 # Make BTRFS ROOT filesystem
@@ -287,9 +307,9 @@ fi
 
 # install grub
 if [[ $firmware == uefi ]]; then
-    grub_options="--target=x86_64-efi --efi-directory=/boot --bootloader-id=artix"
+    grub_options="--target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB"
 else
-    grub_options="--recheck ${drive}"
+    grub_options="--target=i386-pc --recheck ${drive}"
 fi
 
 artix-chroot /mnt bash -c "grub-install ${grub_options}"
