@@ -10,20 +10,20 @@ boot="${drive}1"
 swap="${drive}2"
 root="${drive}3"
 swap_size=auto
-firmware=bios
+firmware=uefi
 
 # System
 timezone=Europe/London
 locale=en_GB
 user=blake
 user_groups=wheel,video,audio,input,seat
-hostname=artix
+hostname=ArtixPC
 
 # Features
+autologin=true
 encrypt=false
 arch_support=false
 enable_aur=false
-autologin=true
 
 # ======================================================
 # INSTALLATION
@@ -72,19 +72,18 @@ ram_gb=$(bc <<< "${ram_kB} / 1000^2")
 [[ -z "${boot_size}" ]] && boot_size=512M
 
 # Set boot type
-if [[ $firmware == bios ]]; then
-    boot_type="BIOS Boot"
-else
+if [[ $firmware == uefi ]]; then
     if [[ ! -d /sys/firmware/efi/efivars/ ]]; then
         echo "Error EFI is not supported on this machine"
         exit
     fi
     boot_type=U
+else
+    boot_type="BIOS Boot"
 fi
 
 # Request confirmation
-echo "Selected drive: "
-df -h ${drive}
+drive_size=$(df -h "${drive}" | awk 'NR==2 {print $2}')
 
 features=""
 [[ $encrypt == true ]] && features+="encrypt "
@@ -92,7 +91,6 @@ features=""
 [[ $enable_aur == true ]] && features+="enable_aur "
 [[ $autologin == true ]] && features+="autologin "
 
-drive_size=$(df -h "${drive}" | awk 'NR==2 {print $2}')
 echo "
 ================ CONFIRM INSTALLATION ================
 Drive: ${drive} (size: ${drive_size})
@@ -294,12 +292,8 @@ fi
 artix-chroot /mnt bash -c "grub-install ${grub_options}"
 artix-chroot /mnt bash -c "grub-mkconfig -o /boot/grub/grub.cfg"
 
-echo "
-----------------------------------------------------------------------
-                    Main Installation Complete
-----------------------------------------------------------------------
-"
-
+# FEATURES
+# ====================================================================
 # Enable Arch repositories (extra, community & multilib)
 # https://wiki.artixlinux.org/Main/Repositories
 if [[ "${arch_support}" == true ]]; then
