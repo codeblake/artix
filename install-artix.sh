@@ -305,6 +305,11 @@ if [[ "${encrypt}" == true ]]; then
         -i /mnt/etc/default/grub
 fi
 
+# Detect other OS in GRUB
+if [[ $duel_boot == true ]]; then
+    echo "GRUB_DISABLE_OS_PROBER=false" >> /mnt/etc/default/grub
+fi
+
 # install grub
 if [[ $firmware == uefi ]]; then
     grub_options="--target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB"
