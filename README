@@ -1,7 +1,9 @@
 ======================================================
 Installs Artix Linux with LUKS Root Encryption & BTRFS
 ======================================================
-Working on: UEFI
+
+IMPORTANT:
+Script is working on UEFI but not BIOS at the moment.
 
 USAGE:
 1. Configure DRIVE & other options in script
@@ -40,9 +42,6 @@ CONFIGURATION:
 
 - boot_size: defaults to 512M. Can be overwritten
   e.g: 'boot_size=1G'.
-
-- firmware: install for uefi or bios systems
-  e.g: 'firmware=uefi'.
 
 - timezone: a timezone (defined in '/usr/share/zoneinfo/').
 - locale: a locale (defined in '/etc/locale.gen').

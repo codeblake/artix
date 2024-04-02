@@ -10,6 +10,8 @@ boot="${drive}1"
 swap="${drive}2"
 root="${drive}3"
 swap_size=auto
+
+# NOTE: BIOS NOT CURRENTLY WORKING
 firmware=uefi
 
 # System
