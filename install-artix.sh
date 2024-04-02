@@ -14,7 +14,12 @@ boot_size=512M
 
 # NOTE: BIOS NOT CURRENTLY WORKING
 firmware=uefi
-# When duel-booting, use a shared boot partition
+
+# DUEL-BOOT (i.e. a shared boot partition is used)
+# Note:
+# - ensure BOOT, SWAP, & ROOT are set to the correct partitions
+# - when enabled, the boot partition will NOT be formatted
+# - boot partition must be ready to use (i.e. created/formatted)
 duel_boot=true
 
 # System
