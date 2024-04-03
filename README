@@ -40,8 +40,8 @@ CONFIGURATION:
 - swap_size: defaults to auto, but can be overwritten
   e.g: 'swap_size=8G'.
 
-- boot_size: defaults to 512M. Can be overwritten
-  e.g: 'boot_size=1G'.
+- boot_size: defaults to 512M.
+  Set 512M or more if duel-booting; e.g: 'boot_size=1G'.
 
 - timezone: a timezone (defined in '/usr/share/zoneinfo/').
 - locale: a locale (defined in '/etc/locale.gen').

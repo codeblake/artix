@@ -79,9 +79,10 @@ ram_gb=$(bc <<< "${ram_kB} / 1000^2")
     && swap_size="$(bc <<< "sqrt(${ram_gb}) * 4")G"
 
 # Get boot size if using an already created partition
-# (note: used for prompt confirmation)
+# (note: only used for prompt confirmation)
 if [[ $duel_boot == true ]]; then
-    boot_size=$(df -h "${boot}" | awk 'NR==2 {print $2}')
+    boot_bytes=$(blockdev --getsize64 "${boot}")
+    boot_size="$(bc <<< "${boot_bytes} / 1000000000")G"
 fi
 
 # Set boot type
@@ -96,7 +97,8 @@ else
 fi
 
 # Request confirmation
-drive_size=$(df -h "${drive}" | awk 'NR==2 {print $2}')
+drive_bytes=$(blockdev --getsize64 "${drive}")
+drive_size="$(bc <<< "${drive_bytes} / 1000000000")G"
 
 features=""
 [[ $encrypt == true ]] && features+="encrypt "
