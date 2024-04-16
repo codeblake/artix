@@ -225,7 +225,7 @@ basestrap /mnt \
           cronie-runit openssh-runit ufw-runit
 
 # Enable runit services
-services="ufw iwd dhcpcd openntpd cronie openssh"
+services="ufw iwd dhcpcd openntpd cronie sshd"
 # NOTE: do not quote 'services' variable or space is ignored
 for service in ${services}; do
     artix-chroot /mnt bash -c \
