@@ -20,7 +20,7 @@ firmware=uefi
 # - ensure BOOT, SWAP, & ROOT are set to the correct partitions
 # - when enabled, the boot partition will NOT be formatted
 # - boot partition must be ready to use (i.e. created/formatted)
-duel_boot=true
+duel_boot=false
 
 # System
 timezone=Europe/London
@@ -30,8 +30,8 @@ user_groups=wheel,video,audio,input,seat
 hostname=ArtixPC
 
 # Features
-autologin=true
-encrypt=true
+autologin=false
+encrypt=false
 arch_support=false
 enable_aur=false
 
@@ -204,32 +204,27 @@ ucode=amd-ucode
 [[ $(grep "vendor_id" /proc/cpuinfo) == *Intel* ]] && ucode=intel-ucode
 
 # Install base packages
-basestrap /mnt \
-          base base-devel runit seatd-runit pam_rundir
+basestrap /mnt base base-devel dinit seatd-dinit pam_rundir
 
 # Install Linux & utilities
 basestrap /mnt \
           linux linux-firmware \
           grub efibootmgr os-prober \
           btrfs-progs mkinitcpio-nfs-utils \
-          git vim man-db man-pages "${ucode}" \
-          runit-bash-completions
+          git nano man-db man-pages "${ucode}" \
 
 # Install runit services
 if [[ "${encrypt}" == true ]]; then
     basestrap /mnt cryptsetup-runit
 fi
 
-basestrap /mnt \
-          iwd-runit dhcpcd-runit openntpd-runit \
-          cronie-runit openssh-runit ufw-runit
+basestrap /mnt {iwd,dhcpcd,openntpd,cronie,openssh,ufw,dbus}-dinit
 
 # Enable runit services
-services="ufw iwd dhcpcd openntpd cronie sshd"
+services="dbus ufw iwd dhcpcd openntpd cronie"
 # NOTE: do not quote 'services' variable or space is ignored
 for service in ${services}; do
-    artix-chroot /mnt bash -c \
-      "ln -sf /etc/runit/sv/${service} /etc/runit/runsvdir/default/"
+    artix-chroot /mnt bash -c dinitctl enable $service
 done
 
 # Generate file-system table
