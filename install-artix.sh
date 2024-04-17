@@ -213,14 +213,14 @@ basestrap /mnt \
           btrfs-progs mkinitcpio-nfs-utils \
           git nano man-db man-pages "${ucode}" \
 
-# Install runit services
+# Install crypt service
 if [[ "${encrypt}" == true ]]; then
-    basestrap /mnt cryptsetup-runit
+    basestrap /mnt cryptsetup-dinit
 fi
 
 basestrap /mnt {iwd,dhcpcd,openntpd,cronie,openssh,ufw,dbus}-dinit
 
-# Enable runit services
+# Enable services
 services="dbus ufw iwd dhcpcd openntpd cronie"
 # NOTE: do not quote 'services' variable or space is ignored
 for service in ${services}; do
@@ -272,8 +272,10 @@ ${user} ALL=(ALL) NOPASSWD: PACMAN,REBOOT,STAT
 
 # Add user to autologin (note: password must match decryption password)
 if [[ "${autologin}" == true ]]; then
-    sed "s/GETTY_ARGS=\".*\"/GETTY_ARGS=\"--noclear --autologin ${user}\"/" \
-        -i /mnt/etc/runit/sv/agetty-tty1/conf
+    cp /mnt/etc/dinit.d/config/agetty-default.conf \
+       /mnt/etc/dinit.c/config/agetty-tty1.conf
+    sed "s/GETTY_ARGS=.*/GETTY_ARGS=\"--noclear --autologin ${user}\"/" \
+        -i /mnt/etc/dinit.c/config/agetty-tty1.conf
 fi
 
 # Add PACMAN download style
