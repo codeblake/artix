@@ -54,6 +54,9 @@ echo "Checking for internet connection..."
 ping -c 3 artixlinux.org &> /dev/null \
     || { echo "No internet connection found"; exit; }
 
+# Sync clock
+dinitctl start ntpd
+
 # Read password
 echo "Enter a password for ${user} (also used for encryption if enabled)"
 while true; do
@@ -223,7 +226,8 @@ basestrap /mnt {iwd,dhcpcd,openntpd,cronie,openssh,ufw,dbus}-dinit
 services="dbus ufw iwd dhcpcd openntpd cronie"
 # NOTE: do not quote 'services' variable or space is ignored
 for service in ${services}; do
-    artix-chroot /mnt bash -c dinitctl enable $service
+    artix-chroot /mnt bash -c \
+                 "ln -s /etc/dinit.d/$service /etc/dinit.d/boot.d/"
 done
 
 # Generate file-system table
