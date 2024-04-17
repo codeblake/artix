@@ -186,15 +186,19 @@ mount "${root}" /mnt
 btrfs -q subvolume create /mnt/@
 btrfs -q subvolume create /mnt/@home
 btrfs -q subvolume create /mnt/@snapshots
+btrfs -q subvolume create /mnt/@tmp
+btrfs -q subvolume create /mnt/@var
 
 # Mount BTRFS subvolumes
 umount /mnt
 options="noatime,space_cache=v2,compress=zstd,ssd,discard=async"
 mount -o "${options},subvol=@" "${root}" /mnt
-mkdir /mnt/{boot,home,.snapshots}
+mkdir /mnt/{boot,home,.snapshots,tmp,var}
 mount -o "${options},subvol=@home" "${root}" /mnt/home
-mount -o "${options},subvol=@snapshots" "${root}" /mnt/.snapshots
-chmod 750 /mnt/.snapshots
+mount -o "${options},subvol=@snapshots" "${root}" /mnt/.snapshots \
+    && chmod 750 /mnt/.snapshots
+mount -o "${options},subvol=@tmp" "${root}" /mnt/tmp
+mount -o "${options},subvol=@var" "${root}" /mnt/var
 
 # Mount boot partition.
 mount "${boot}" /mnt/boot
