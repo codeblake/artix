@@ -204,13 +204,12 @@ ucode=amd-ucode
 [[ $(grep "vendor_id" /proc/cpuinfo) == *Intel* ]] && ucode=intel-ucode
 
 # Install base packages
-basestrap /mnt base base-devel dinit seatd-dinit pam_rundir
+basestrap /mnt base base-devel dinit seatd-dinit pam_rundir booster
 
 # Install Linux & utilities
 basestrap /mnt \
           linux linux-firmware \
-          grub efibootmgr os-prober \
-          btrfs-progs mkinitcpio-nfs-utils \
+          grub efibootmgr os-prober btrfs-progs \
           git nano man-db man-pages "${ucode}" \
 
 # Install crypt service
@@ -288,17 +287,10 @@ cp /etc/makepkg.conf /etc/makepkg.conf.bak
 sed "s/#MAKEFLAGS=\".*\"/MAKEFLAGS=\"-j$(nproc)\"/" \
     -i /mnt/etc/makepkg.conf
 
-# Configure mkinitcpio.conf
-modules="btrfs"
-sed "s/^MODULES=(.*)/MODULES=(${modules})/" -i /mnt/etc/mkinitcpio.conf
-
-if [[ "${encrypt}" == true ]]; then
-    hooks="base udev autodetect modconf kms keyboard keymap block encrypt resume filesystems fsck"
-    sed "s/^HOOKS=(.*)/HOOKS=(${hooks})/" -i /mnt/etc/mkinitcpio.conf
-fi
-
-# Rebuild ram-disk environment for Linux kernel
-artix-chroot /mnt bash -c "mkinitcpio -p linux"
+# Configure booster
+echo "compress: zstd -9 -T0
+modules: btrfs" > /mnt/etc/booster.yaml
+artix-chroot /mnt bash -c "/usr/lib/booster/regenerate_images"
 
 # Configure GRUB
 if [[ "${encrypt}" == true ]]; then
