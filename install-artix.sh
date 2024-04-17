@@ -11,9 +11,6 @@ root="${drive}2"
 swap_size=auto
 boot_size=512M
 
-# NOTE: BIOS NOT CURRENTLY WORKING
-firmware=uefi
-
 # DUEL-BOOT (i.e. a shared boot partition is used)
 # Note:
 # - ensure BOOT, SWAP, & ROOT are set to the correct partitions
@@ -47,8 +44,15 @@ umount -R /mnt &> /dev/null
 set -e
 
 # Checks
-[[ "${drive}" == "/dev/DRIVE" ]] \
-    && { echo "You forgot to set the DRIVE option!"; exit; }
+if [[ ! -d /sys/firmware/efi/efivars ]]; then
+    echo "Only UEFI systems are currently supported"
+    exit
+fi
+if [[ "${drive}" == "/dev/DRIVE" ]]; then
+    echo "You forgot to set the DRIVE option!"
+    exit
+fi
+
 echo "Checking for internet connection..."
 ping -c 3 artixlinux.org &> /dev/null \
     || { echo "No internet connection found"; exit; }
@@ -74,11 +78,15 @@ ram_kB=$(awk 'FNR==1 {print $2}' /proc/meminfo)
 ram_gb=$(bc <<< "${ram_kB} / 1000^2")
 
 # Check there is at least 1GB RAM for swap
-[[ "${ram_gb}" -lt 1 ]] && { echo "Not enough ram for SWAP"; exit; }
+if [[ "${ram_gb}" -lt 1 ]]; then
+    echo "Not enough ram for SWAP"
+    exit
+fi
 
 # Calculate SWAP size
-[[ -z "${swap_size}" || "${swap_size}" == auto ]] \
-    && swap_size="$(bc <<< "sqrt(${ram_gb}) * 4")G"
+if [[ "${swap_size}" == auto ]]; then
+    swap_size="$(bc <<< "sqrt(${ram_gb}) * 4")G"
+fi
 
 # Get boot size if using an already created partition
 # (note: only used for prompt confirmation)
@@ -87,22 +95,10 @@ if [[ $duel_boot == true ]]; then
     boot_size="$(bc <<< "${boot_bytes} / 1000000000")G"
 fi
 
-# Set boot type
-if [[ $firmware == uefi ]]; then
-    if [[ ! -d /sys/firmware/efi/efivars/ ]]; then
-        echo "Error EFI is not supported on this machine"
-        exit
-    fi
-    boot_type=U
-else
-    boot_type="BIOS Boot"
-fi
-
 # Request confirmation
 drive_bytes=$(blockdev --getsize64 "${drive}")
 drive_size="$(bc <<< "${drive_bytes} / 1000000000")G"
 
-features=""
 [[ $encrypt == true ]] && features+="encrypt "
 [[ $arch_support == true ]] && features+="arch_support "
 [[ $enable_aur == true ]] && features+="enable_aur "
@@ -139,9 +135,8 @@ if [[ $duel_boot == true ]]; then
     printf ',+,L\n' "${swap_size}" \
         | sfdisk -qf -X gpt ${drive}
 else
-    # create boot & root partition
-    printf ',%s,"%s",*\n,+,L\n' \
-           "${boot_size}" "${boot_type}" \
+    # create UEFI boot & root partition
+    printf ',%s,U,*\n,+,L\n' "${boot_size}" \
         | sfdisk -qf -X gpt ${drive}
 fi
 
@@ -164,11 +159,7 @@ fi
 
 # Make BOOT filesystem
 if [[ $duel_boot == false ]]; then
-    if [[ $firmware == uefi ]]; then
-        mkfs.fat -n BOOT -F 32 "${boot}"
-    else
-        mkfs.ext4 -qL BOOT "${boot}"
-    fi
+    mkfs.fat -n BOOT -F 32 "${boot}"
 fi
 
 # Make BTRFS ROOT filesystem
@@ -213,7 +204,9 @@ pacman -Syy
 
 # Get CPU type & install microcode
 ucode=amd-ucode
-[[ $(grep "vendor_id" /proc/cpuinfo) == *Intel* ]] && ucode=intel-ucode
+if [[ $(grep "vendor_id" /proc/cpuinfo) == *Intel* ]]; then
+    ucode=intel-ucode
+fi
 
 # Install base packages
 basestrap /mnt base base-devel dinit seatd-dinit pam_rundir booster
@@ -319,12 +312,8 @@ if [[ $duel_boot == true ]]; then
     echo "GRUB_DISABLE_OS_PROBER=false" >> /mnt/etc/default/grub
 fi
 
-# install grub
-if [[ $firmware == uefi ]]; then
-    grub_options="--target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB"
-else
-    grub_options="--target=i386-pc --recheck ${drive}"
-fi
+# Install grub
+grub_options="--target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB"
 
 artix-chroot /mnt bash -c "grub-install ${grub_options}"
 artix-chroot /mnt bash -c "grub-mkconfig -o /boot/grub/grub.cfg"
