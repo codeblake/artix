@@ -111,7 +111,6 @@ Drive: ${drive} (size: ${drive_size})
 BOOT Partition: ${boot}, Size: ${boot_size}
 ROOT Partition: ${root}, Size: MAX
 SWAP Size: ${swap_size}
-Firmware: ${firmware}
 ------------------------------------------------------
 Features: ${features}
 ------------------------------------------------------
