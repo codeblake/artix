@@ -7,8 +7,7 @@
 # Drive
 drive="/dev/DRIVE"
 boot="${drive}1"
-swap="${drive}2"
-root="${drive}3"
+root="${drive}2"
 swap_size=auto
 boot_size=512M
 
@@ -114,8 +113,8 @@ echo "
 ================ CONFIRM INSTALLATION ================
 Drive: ${drive} (size: ${drive_size})
 BOOT Partition: ${boot}, Size: ${boot_size}
-SWAP Partition: ${swap}, Size: ${swap_size}
 ROOT Partition: ${root}, Size: MAX
+SWAP Size: ${swap_size}
 Firmware: ${firmware}
 ------------------------------------------------------
 Features: ${features}
@@ -136,13 +135,13 @@ wipefs -a "${drive}"
 
 # Create partitions
 if [[ $duel_boot == true ]]; then
-    # create swap & root partition
-    printf ',%s,S\n,+,L\n' "${swap_size}" \
+    # create root partition
+    printf ',+,L\n' "${swap_size}" \
         | sfdisk -qf -X gpt ${drive}
 else
-    # create boot, swap, & root partition
-    printf ',%s,"%s",*\n,%s,S\n,+,L\n' \
-           "${boot_size}" "${boot_type}" "${swap_size}" \
+    # create boot & root partition
+    printf ',%s,"%s",*\n,+,L\n' \
+           "${boot_size}" "${boot_type}" \
         | sfdisk -qf -X gpt ${drive}
 fi
 
@@ -162,10 +161,6 @@ if [[ $encrypt == true ]]; then
     # Change root path to mapper
     root="/dev/mapper/root"
 fi
-
-# enable SWAP partition
-mkswap -L SWAP "${swap}"
-swapon "${swap}"
 
 # Make BOOT filesystem
 if [[ $duel_boot == false ]]; then
@@ -188,17 +183,27 @@ btrfs -q subvolume create /mnt/@home
 btrfs -q subvolume create /mnt/@snapshots
 btrfs -q subvolume create /mnt/@tmp
 btrfs -q subvolume create /mnt/@var
+btrfs -q subvolume create /mnt/@swap
 
 # Mount BTRFS subvolumes
 umount /mnt
 options="noatime,compress=zstd"
 mount -o "${options},subvol=@" "${root}" /mnt
-mkdir /mnt/{boot,home,.snapshots,tmp,var}
+mkdir /mnt/{boot,home,tmp,var,.snapshots,.swap}
 mount -o "${options},subvol=@home" "${root}" /mnt/home
-mount -o "${options},subvol=@snapshots" "${root}" /mnt/.snapshots \
-    && chmod 750 /mnt/.snapshots
 mount -o "${options},subvol=@tmp" "${root}" /mnt/tmp
 mount -o "${options},subvol=@var" "${root}" /mnt/var
+mount -o "${options},subvol=@snapshots" "${root}" /mnt/.snapshots \
+    && chmod 750 /mnt/.snapshots
+mount -o "nodatacow,subvol=@swap" "${root}" /mnt/.swap
+
+# Create swap file
+btrfs filesystem mkswapfile \
+      --size "$swap_size" \
+      --uuid clear \
+      /mnt/.swap/swapfile
+btrfs property set /mnt/.swap compression none
+swapon /mnt/.swap/swapfile
 
 # Mount boot partition.
 mount "${boot}" /mnt/boot
