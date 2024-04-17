@@ -191,7 +191,7 @@ btrfs -q subvolume create /mnt/@var
 
 # Mount BTRFS subvolumes
 umount /mnt
-options="noatime,space_cache=v2,compress=zstd,ssd,discard=async"
+options="noatime,compress=zstd"
 mount -o "${options},subvol=@" "${root}" /mnt
 mkdir /mnt/{boot,home,.snapshots,tmp,var}
 mount -o "${options},subvol=@home" "${root}" /mnt/home
@@ -381,9 +381,9 @@ if [[ "${enable_aur}" == true ]]; then
 fi
 
 # FINISH
+swapoff -a
 umount -R /mnt
 [[ "${encrypt}" == true ]] && cryptsetup close root
-swapoff -a
 set +x
 
 echo "
