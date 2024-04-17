@@ -300,22 +300,6 @@ artix-chroot /mnt bash -c "/usr/lib/booster/regenerate_images"
 # Install rEFInd
 artix-chroot /mnt bash -c "refind-install"
 
-# Install rEFInd theme
-## download repo
-git clone https://github.com/bobafetthotmail/refind-theme-regular.git /mnt/tmp/refind-theme-regular
-## remove unused directories and files
-rm -rf /mnt/tmp/refind-theme-regular/{src,.git}
-rm /mnt/tmp/refind-theme-regular/install.sh
-## remove old theme (if previously installed to boot)
-rm -rf /mnt/boot/EFI/refind/{regular-theme,refind-theme-regular}
-rm -rf /mnt/boot/EFI/refind/themes/{regular-theme,refind-theme-regular}
-## install theme
-mkdir -p /mnt/boot/EFI/refind/themes
-cp -r /mnt/tmp/refind-theme-regular /mnt/boot/EFI/refind/themes/
-## enable theme
-echo "# Load refind-theme-regular
-include themes/refind-theme-regular/theme.conf" >> /mnt/boot/EFI/refind/refind.conf
-
 # FEATURES
 # ====================================================================
 # Enable Arch repositories (extra, community & multilib)
@@ -372,10 +356,10 @@ if [[ "${enable_aur}" == true ]]; then
     echo "AUR helper installation complete!"
 fi
 
-# FINISH
-swapoff -a
-umount -R /mnt
-[[ "${encrypt}" == true ]] && cryptsetup close root
+# # FINISH
+# swapoff -a
+# umount -R /mnt
+# [[ "${encrypt}" == true ]] && cryptsetup close root
 set +x
 
 echo "
