@@ -189,12 +189,29 @@ mount -o "${options},subvol=@snapshots" "${root}" /mnt/.snapshots \
 mount -o "nodatacow,subvol=@swap" "${root}" /mnt/.swap
 
 # Create swap file
-btrfs filesystem mkswapfile \
-      --size "$swap_size" \
-      --uuid clear \
-      /mnt/.swap/swapfile
+# btrfs filesystem mkswapfile \
+#       --size "$swap_size" \
+#       --uuid clear \
+#       /mnt/.swap/swapfile
+# btrfs property set /mnt/.swap compression none
+# swapon /mnt/.swap/swapfile
+
+# SWAP FILE
+swapfile=/mnt/.swap/swapfile
+# create an empty file
+truncate -s 0 $swapfile
+# set to copy-on-write
+chattr +C $swapfile
+# preallocate file size to swap size
+fallocate -l $swap_size $swapfile
+# restrict access to swap file
+chmod 0600 $swapfile
+# initialise the swap file
+mkswap -L SWAP $swapfile
+# ensure swap sub-volume does not use compression
 btrfs property set /mnt/.swap compression none
-swapon /mnt/.swap/swapfile
+# enable the swap file
+swapon $swapfile
 
 # Mount boot partition.
 mount "${boot}" /mnt/boot
