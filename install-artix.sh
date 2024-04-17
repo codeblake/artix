@@ -171,9 +171,9 @@ mount "${root}" /mnt
 # Create BTRFS subvolumes
 btrfs -q subvolume create /mnt/@
 btrfs -q subvolume create /mnt/@home
-btrfs -q subvolume create /mnt/@snapshots
 btrfs -q subvolume create /mnt/@tmp
 btrfs -q subvolume create /mnt/@var
+btrfs -q subvolume create /mnt/@snapshots
 btrfs -q subvolume create /mnt/@swap
 
 # Mount BTRFS subvolumes
@@ -186,32 +186,15 @@ mount -o "${options},subvol=@tmp" "${root}" /mnt/tmp
 mount -o "${options},subvol=@var" "${root}" /mnt/var
 mount -o "${options},subvol=@snapshots" "${root}" /mnt/.snapshots \
     && chmod 750 /mnt/.snapshots
-mount -o "nodatacow,subvol=@swap" "${root}" /mnt/.swap
+mount -o "nodatacow,compress=no,subvol=@swap" "${root}" /mnt/.swap
 
 # Create swap file
-# btrfs filesystem mkswapfile \
-#       --size "$swap_size" \
-#       --uuid clear \
-#       /mnt/.swap/swapfile
-# btrfs property set /mnt/.swap compression none
-# swapon /mnt/.swap/swapfile
-
-# SWAP FILE
-swapfile=/mnt/.swap/swapfile
-# create an empty file
-truncate -s 0 $swapfile
-# set to copy-on-write
-chattr +C $swapfile
-# preallocate file size to swap size
-fallocate -l $swap_size $swapfile
-# restrict access to swap file
-chmod 0600 $swapfile
-# initialise the swap file
-mkswap -L SWAP $swapfile
-# ensure swap sub-volume does not use compression
+btrfs filesystem mkswapfile \
+      --size "$swap_size" \
+      --uuid clear \
+      /mnt/.swap/swapfile
 btrfs property set /mnt/.swap compression none
-# enable the swap file
-swapon $swapfile
+swapon /mnt/.swap/swapfile
 
 # Mount boot partition.
 mount "${boot}" /mnt/boot
@@ -231,8 +214,8 @@ basestrap /mnt base base-devel dinit seatd-dinit pam_rundir booster
 # Install Linux & utilities
 basestrap /mnt \
           linux linux-firmware \
-          grub efibootmgr os-prober btrfs-progs \
-          git nano man-db man-pages "${ucode}" \
+          refind btrfs-progs \
+          git nano man-{db,pages} "${ucode}" \
 
 # Install crypt service
 if [[ "${encrypt}" == true ]]; then
@@ -315,25 +298,24 @@ echo "compress: zstd -9 -T0
 modules: btrfs" > /mnt/etc/booster.yaml
 artix-chroot /mnt bash -c "/usr/lib/booster/regenerate_images"
 
-# Configure GRUB
-if [[ "${encrypt}" == true ]]; then
-    devices="resume=LABEL=SWAP cryptdevice=LABEL=LUKS:root"
-    grub_cmds="loglevel=3 net.iframes=0 quiet splash ${devices}"
+# Install rEFInd
+artix-chroot /mnt bash -c "refind-install"
 
-    sed "s/^GRUB_CMDLINE_LINUX_DEFAULT=.*$/GRUB_CMDLINE_LINUX_DEFAULT=\"${grub_cmds}\"/" \
-        -i /mnt/etc/default/grub
-fi
-
-# Detect other OS in GRUB
-if [[ $duel_boot == true ]]; then
-    echo "GRUB_DISABLE_OS_PROBER=false" >> /mnt/etc/default/grub
-fi
-
-# Install grub
-grub_options="--target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB"
-
-artix-chroot /mnt bash -c "grub-install ${grub_options}"
-artix-chroot /mnt bash -c "grub-mkconfig -o /boot/grub/grub.cfg"
+# Install rEFInd theme
+## download repo
+git clone https://github.com/bobafetthotmail/refind-theme-regular.git /mnt/tmp/refind-theme-regular
+## remove unused directories and files
+rm -rf /mnt/tmp/refind-theme-regular/{src,.git}
+rm /mnt/tmp/refind-theme-regular/install.sh
+## remove old theme (if previously installed to boot)
+rm -rf /mnt/boot/EFI/refind/{regular-theme,refind-theme-regular}
+rm -rf /mnt/boot/EFI/refind/themes/{regular-theme,refind-theme-regular}
+## install theme
+mkdir -p /mnt/boot/EFI/refind/themes
+cp -r /mnt/tmp/refind-theme-regular /mnt/boot/EFI/refind/themes/
+## enable theme
+echo "# Load refind-theme-regular
+include themes/refind-theme-regular/theme.conf" >> /mnt/boot/EFI/refind/refind.conf
 
 # FEATURES
 # ====================================================================
