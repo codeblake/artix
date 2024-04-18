@@ -298,9 +298,9 @@ ${user} ALL=(ALL) NOPASSWD: PACMAN,REBOOT,STAT
 # Add user to autologin (note: password must match decryption password)
 if [[ "${autologin}" == true ]]; then
     cp /mnt/etc/dinit.d/config/agetty-default.conf \
-       /mnt/etc/dinit.c/config/agetty-tty1.conf
+       /mnt/etc/dinit.d/config/agetty-tty1.conf
     sed "s/GETTY_ARGS=.*/GETTY_ARGS=\"--noclear --autologin ${user}\"/" \
-        -i /mnt/etc/dinit.c/config/agetty-tty1.conf
+        -i /mnt/etc/dinit.d/config/agetty-tty1.conf
 fi
 
 # Add PACMAN download style
