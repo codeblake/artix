@@ -356,6 +356,11 @@ grub_options="--target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB"
 artix-chroot /mnt bash -c "grub-install ${grub_options}"
 artix-chroot /mnt bash -c "grub-mkconfig -o /boot/grub/grub.cfg"
 
+# Install grub theme
+pacman --noconfirm --needed -Sy git
+git clone https://github.com/vinceliuice/grub2-themes.git /mnt/tmp/grub2-themes
+artix-chroot /mnt bash -c "/tmp/grub2-themes/install.sh -b -t stylish"
+
 # FEATURES
 # ====================================================================
 # Enable Arch repositories (extra, community & multilib)
