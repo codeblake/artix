@@ -335,7 +335,7 @@ devices+=" resume_offset=$(btrfs inspect-internal map-swapfile -r $swapfile)"
 grub_cmds="loglevel=3 net.iframes=0 quiet splash"
 
 # Replace default grub commands
-sed "s/^GRUB_CMDLINE_LINUX_DEFAULT=.*$/GRUB_CMDLINE_LINUX_DEFAULT=\"${grub_cmds} ${devices}\"/" \
+sed "s/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT=\"${grub_cmds} ${devices}\"/" \
     -i /mnt/etc/default/grub
 
 # Enable os-prober to detect other operating systems
