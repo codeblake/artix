@@ -308,6 +308,9 @@ pac_options=ILoveCandy
 sed "s/# Misc options/# Misc options\n${pac_options}/g" \
     -i /mnt/etc/pacman.conf
 
+# Enable firewall
+sed "s/ENABLED=no/ENABLED=yes/" -i /mnt/etc/ufw/ufw.conf
+
 # Set MAKEFLAGS to match CPU threads for faster compiling
 cp /etc/makepkg.conf /etc/makepkg.conf.bak
 sed "s/#MAKEFLAGS=\".*\"/MAKEFLAGS=\"-j$(nproc)\"/" \
@@ -409,10 +412,10 @@ if [[ "${enable_aur}" == true ]]; then
     echo "AUR helper installation complete!"
 fi
 
-# # FINISH
-# swapoff -a
-# umount -R /mnt
-# [[ "${encrypt}" == true ]] && cryptsetup close root
+# FINISH
+swapoff -a
+umount -R /mnt
+[[ "${encrypt}" == true ]] && cryptsetup close root
 set +x
 
 echo "
