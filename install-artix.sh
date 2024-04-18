@@ -253,7 +253,7 @@ for service in ${services}; do
 done
 
 # Generate file-system table
-fstabgen -U /mnt >> /mnt/etc/fstab
+fstabgen -L /mnt >> /mnt/etc/fstab
 
 # Set swappiness levels
 [ -d /mnt/etc/sysctl.d/ ] || mkdir -p /mnt/etc/sysctl.d/
