@@ -13,7 +13,7 @@ boot_size=512M
 
 # DUEL-BOOT (i.e. a shared boot partition is used)
 # Note:
-# - ensure BOOT, SWAP, & ROOT are set to the correct partitions
+# - ensure BOOT & ROOT are set to the correct partitions
 # - when enabled, the boot partition will NOT be formatted
 # - boot partition must be ready to use (i.e. created/formatted)
 duel_boot=false
@@ -188,12 +188,28 @@ mount -o "${options},subvol=@snapshots" "${root}" /mnt/.snapshots \
 mount -o "nodatacow,subvol=@swap" "${root}" /mnt/.swap
 
 # Create swap file
-btrfs filesystem mkswapfile \
-      --size "$swap_size" \
-      --uuid clear \
-      /mnt/.swap/swapfile
+# btrfs filesystem mkswapfile \
+#       --size "$swap_size" \
+#       --uuid clear \
+#       /mnt/.swap/swapfile
+# btrfs property set /mnt/.swap compression none
+# swapon /mnt/.swap/swapfile
+
+# SWAP FILE
+swapfile=/mnt/.swap/swapfile
+# create an empty file
+truncate -s 0 $swapfile
+# set to copy-on-write
+chattr +Cm $swapfile
+# preallocate file size to swap size
+fallocate -l $swap_size $swapfile
+# restrict access to swap file
+chmod 0600 $swapfile
+# initialise the swap file (note: LABEL is required for bootloader)
+mkswap -L SWAP $swapfile
+# ensure compression is disabled
 btrfs property set /mnt/.swap compression none
-swapon /mnt/.swap/swapfile
+swapon $swapfile
 
 # Mount boot partition.
 mount "${boot}" /mnt/boot
@@ -211,10 +227,15 @@ fi
 basestrap /mnt base base-devel dinit seatd-dinit pam_rundir booster
 
 # Install Linux & utilities
+
 basestrap /mnt \
           linux linux-firmware \
-          refind btrfs-progs artools-base gdisk \
-          git nano man-{db,pages} "${ucode}" \
+          grub efibootmgr os-prober \
+          btrfs-progs \
+          git nano man-{db,pages} "${ucode}"
+
+# req. for refind bootloader
+# basestrap /mnt refind artools-base gdisk
 
 # Install crypt service
 if [[ "${encrypt}" == true ]]; then
@@ -252,7 +273,7 @@ artix-chroot /mnt bash -c \
 artix-chroot /mnt bash -c "hwclock -w"
 
 # Set default text editor
-echo "export EDITOR=vim" >> /mnt/etc/profile
+echo "export EDITOR=nano" >> /mnt/etc/profile
 
 # Set hostname
 echo "${hostname}" > /mnt/etc/hostname
@@ -297,8 +318,35 @@ echo "compress: zstd -9 -T0
 modules: btrfs" > /mnt/etc/booster.yaml
 artix-chroot /mnt bash -c "/usr/lib/booster/regenerate_images"
 
-# Install rEFInd
-artix-chroot /mnt bash -c "refind-install"
+# SETUP BOOTLOADER
+# --------------------------------------------------------------------
+# Set devices
+## add swap for hibernation
+devices="resume=LABEL=SWAP"
+
+## when using a btrfs swapfile, an offset is required for hibernation to work
+## https://man.archlinux.org/man/btrfs.5#HIBERNATION
+devices+=" resume_offset=\"$(btrfs inspect-internal map-swapfile -r $swapfile)\""
+
+## add cryptdevice partition if enabled
+[[ "${encrypt}" == true ]] && devices+=" cryptdevice=LABEL=LUKS:root"
+
+# Set command options
+grub_cmds="loglevel=3 net.iframes=0 quiet splash"
+
+# Replace default grub commands
+sed "s/^GRUB_CMDLINE_LINUX_DEFAULT=.*$/GRUB_CMDLINE_LINUX_DEFAULT=\"${grub_cmds} ${devices}\"/" \
+    -i /mnt/etc/default/grub
+
+# Enable os-prober to detect other operating systems
+if [[ $duel_boot == true ]]; then
+    echo "GRUB_DISABLE_OS_PROBER=false" >> /mnt/etc/default/grub
+fi
+
+# Install grub bootloader
+grub_options="--target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB"
+artix-chroot /mnt bash -c "grub-install ${grub_options}"
+artix-chroot /mnt bash -c "grub-mkconfig -o /boot/grub/grub.cfg"
 
 # FEATURES
 # ====================================================================
