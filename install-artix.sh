@@ -185,7 +185,7 @@ mount -o "${options},subvol=@tmp" "${root}" /mnt/tmp
 mount -o "${options},subvol=@var" "${root}" /mnt/var
 mount -o "${options},subvol=@snapshots" "${root}" /mnt/.snapshots \
     && chmod 750 /mnt/.snapshots
-mount -o "nodatacow,compress=no,subvol=@swap" "${root}" /mnt/.swap
+mount -o "nodatacow,subvol=@swap" "${root}" /mnt/.swap
 
 # Create swap file
 btrfs filesystem mkswapfile \
@@ -213,7 +213,7 @@ basestrap /mnt base base-devel dinit seatd-dinit pam_rundir booster
 # Install Linux & utilities
 basestrap /mnt \
           linux linux-firmware \
-          refind btrfs-progs \
+          refind btrfs-progs artools-base gdisk \
           git nano man-{db,pages} "${ucode}" \
 
 # Install crypt service
