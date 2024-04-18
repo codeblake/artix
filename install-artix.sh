@@ -232,7 +232,7 @@ basestrap /mnt \
           linux linux-firmware \
           grub efibootmgr os-prober \
           btrfs-progs \
-          git nano man-{db,pages} "${ucode}"
+          git vim man-{db,pages} "${ucode}"
 
 # req. for refind bootloader
 # basestrap /mnt refind artools-base gdisk
@@ -273,7 +273,7 @@ artix-chroot /mnt bash -c \
 artix-chroot /mnt bash -c "hwclock -w"
 
 # Set default text editor
-echo "export EDITOR=nano" >> /mnt/etc/profile
+echo "export EDITOR=vim" >> /mnt/etc/profile
 
 # Set hostname
 echo "${hostname}" > /mnt/etc/hostname
