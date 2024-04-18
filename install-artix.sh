@@ -317,6 +317,11 @@ sed "s/#MAKEFLAGS=\".*\"/MAKEFLAGS=\"-j$(nproc)\"/" \
 echo "compress: zstd -9 -T0
 modules: btrfs" > /mnt/etc/booster.yaml
 artix-chroot /mnt bash -c "/usr/lib/booster/regenerate_images"
+# Add to GRUB
+echo "
+# Add Booster as custom initrd
+GRUB_EARLY_INITRD_LINUX_CUSTOM=booster-linux.img
+" >> /mnt/etc/default/grub
 
 # SETUP BOOTLOADER
 # --------------------------------------------------------------------
