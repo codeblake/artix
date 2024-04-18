@@ -429,4 +429,3 @@ echo "
 ======================================================================
 "
 echo "You can now reboot and log into system"
-echo "NOTE: AFTER reboot be sure to enable the firewall with 'ufw enable'"
