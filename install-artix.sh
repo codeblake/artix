@@ -334,13 +334,18 @@ devices="resume=LABEL=SWAP"
 
 ## when using a btrfs swapfile, an offset is required for hibernation to work
 ## https://man.archlinux.org/man/btrfs.5#HIBERNATION
-devices+=" resume_offset=$(btrfs inspect-internal map-swapfile -r $swapfile)"
+offset=$(btrfs inspect-internal map-swapfile -r /mnt/.swap/swapfile)
+devices+=" resume_offset=$offset"
 
 ## add cryptdevice partition if enabled
-[[ "${encrypt}" == true ]] && devices+=" cryptdevice=LABEL=LUKS:root"
+# mkinitcpio:
+# [[ "${encrypt}" == true ]] && devices+=" cryptdevice=LABEL=LUKS:root"
+# booster:
+crypt_uuid=$(lsblk -f | grep $(basename $root) | awk '{print $3}')
+[[ "${encrypt}" == true ]] && devices+=" rd.luks.name=${crypt_uuid}=root"
 
 # Set command options
-grub_cmds="loglevel=3 net.iframes=0 quiet splash"
+grub_cmds="quiet loglevel=3 net.iframes=0 splash"
 
 # Replace default grub commands
 sed "s/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT=\"${grub_cmds} ${devices}\"/" \
@@ -358,8 +363,8 @@ artix-chroot /mnt bash -c "grub-mkconfig -o /boot/grub/grub.cfg"
 
 # Install grub theme
 pacman --noconfirm --needed -Sy git
-git clone https://github.com/vinceliuice/grub2-themes.git /mnt/tmp/grub2-themes
-artix-chroot /mnt bash -c "/tmp/grub2-themes/install.sh -b -t stylish"
+git clone https://github.com/vinceliuice/grub2-themes /mnt/tmp/grub2-themes
+artix-chroot /mnt bash -c "/tmp/grub2-themes/install.sh -t stylish -b"
 
 # FEATURES
 # ====================================================================
