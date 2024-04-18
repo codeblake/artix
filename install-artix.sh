@@ -326,7 +326,7 @@ devices="resume=LABEL=SWAP"
 
 ## when using a btrfs swapfile, an offset is required for hibernation to work
 ## https://man.archlinux.org/man/btrfs.5#HIBERNATION
-devices+=" resume_offset=\"$(btrfs inspect-internal map-swapfile -r $swapfile)\""
+devices+=" resume_offset=$(btrfs inspect-internal map-swapfile -r $swapfile)"
 
 ## add cryptdevice partition if enabled
 [[ "${encrypt}" == true ]] && devices+=" cryptdevice=LABEL=LUKS:root"
