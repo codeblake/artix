@@ -154,9 +154,6 @@ if [[ $encrypt == true ]]; then
 
     # Open encrypted drive
     echo "${password}" | cryptsetup luksOpen ${root} Artix
-
-    # Change root path to mapper
-    root="/dev/mapper/Artix"
 fi
 
 # Make BOOT filesystem
