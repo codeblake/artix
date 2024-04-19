@@ -341,14 +341,14 @@ devices+=" resume_offset=$offset"
 # mkinitcpio:
 # [[ "${encrypt}" == true ]] && devices+=" cryptdevice=LABEL=LUKS:root"
 # booster:
-crypt_uuid=$(lsblk -f | grep $(basename $root) | awk '{print $3}')
+crypt_uuid=$(lsblk -f | grep $(basename $root) | awk '{print $4}')
 [[ "${encrypt}" == true ]] && devices+=" rd.luks.name=${crypt_uuid}=root"
 
 # Set command options
 grub_cmds="quiet loglevel=3 net.iframes=0 splash"
 
 # Replace default grub commands
-sed "s/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT=\"${grub_cmds} ${devices}\"/" \
+sed "s/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT=\"$grub_cmds $devices\"/" \
     -i /mnt/etc/default/grub
 
 # Enable os-prober to detect other operating systems
@@ -363,8 +363,9 @@ artix-chroot /mnt bash -c "grub-mkconfig -o /boot/grub/grub.cfg"
 
 # Install grub theme
 pacman --noconfirm --needed -Sy git
-git clone https://github.com/vinceliuice/grub2-themes /mnt/tmp/grub2-themes
-artix-chroot /mnt bash -c "/tmp/grub2-themes/install.sh -t stylish -b"
+git clone https://github.com/vinceliuice/grub2-themes /mnt/grub2-themes
+artix-chroot /mnt bash -c "/grub2-themes/install.sh -b -t stylish"
+rm -rf /mnt/grub2-themes
 
 # FEATURES
 # ====================================================================
