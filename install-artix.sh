@@ -25,7 +25,7 @@ user=blake
 user_groups=wheel,video,audio,input,seat
 hostname=ArtixPC
 
-# Features
+# Options
 autologin=false
 encrypt=false
 arch_support=false
@@ -99,11 +99,12 @@ fi
 drive_bytes=$(blockdev --getsize64 "${drive}")
 drive_size="$(bc <<< "${drive_bytes} / 1000000000")G"
 
-[[ $encrypt == true ]] && features+="encrypt "
-[[ $arch_support == true ]] && features+="arch_support "
-[[ $enable_aur == true ]] && features+="enable_aur "
-[[ $autologin == true ]] && features+="autologin "
-[[ $duel_boot == true ]] && features+="duel_boot "
+# Get a list of options
+[[ $encrypt == true ]] && options+="encrypt "
+[[ $arch_support == true ]] && options+="arch_support "
+[[ $enable_aur == true ]] && options+="enable_aur "
+[[ $autologin == true ]] && options+="autologin "
+[[ $duel_boot == true ]] && options+="duel_boot "
 
 echo "
 ================ CONFIRM INSTALLATION ================
@@ -111,13 +112,15 @@ Drive: ${drive} (size: ${drive_size})
 BOOT Partition: ${boot}, Size: ${boot_size}
 ROOT Partition: ${root}, Size: MAX
 SWAP Size: ${swap_size}
-------------------------------------------------------
-Features: ${features}
-------------------------------------------------------
-!!! CAUTION: ALL data from ${drive} will be erased !!!
+------------------------------------------------------"
+if [[ $options != ""]]; then
+    echo "Enabled options: ${options}
+------------------------------------------------------"
+fi
+echo "CAUTION: ALL data from ${drive} will be erased !!!
 ------------------------------------------------------"
 if [[ $duel_boot == true ]]; then
-    echo "Note: Installing GRUB onto ${boot} will NOT erase drive."
+    echo "Note: GRUB will be installed into ${boot}."
 fi
 
 echo "Are you sure you want install?"
@@ -367,8 +370,6 @@ git clone https://github.com/vinceliuice/grub2-themes /mnt/grub2-themes
 artix-chroot /mnt bash -c "/grub2-themes/install.sh -b -t stylish"
 rm -rf /mnt/grub2-themes
 
-# FEATURES
-# ====================================================================
 # Enable Arch repositories (extra, community & multilib)
 # https://wiki.artixlinux.org/Main/Repositories
 if [[ "${arch_support}" == true ]]; then
