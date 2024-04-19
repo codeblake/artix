@@ -113,8 +113,8 @@ BOOT Partition: ${boot}, Size: ${boot_size}
 ROOT Partition: ${root}, Size: MAX
 SWAP Size: ${swap_size}
 ------------------------------------------------------"
-if [[ $options != ""]]; then
-    echo "Enabled options: ${options}
+if [[ $options != "" ]]; then
+    echo "Options: ${options}
 ------------------------------------------------------"
 fi
 echo "CAUTION: ALL data from ${drive} will be erased !!!
