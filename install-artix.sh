@@ -37,7 +37,7 @@ enable_aur=false
 
 # Ensure nothing mounted
 swapoff -a &> /dev/null
-cryptsetup close root &> /dev/null
+cryptsetup close Artix &> /dev/null
 umount -R /mnt &> /dev/null
 
 # Init shell environment
@@ -150,10 +150,10 @@ if [[ $encrypt == true ]]; then
                                     luksFormat "${root}"
 
     # Open encrypted drive
-    echo "${password}" | cryptsetup luksOpen ${root} root
+    echo "${password}" | cryptsetup luksOpen ${root} Artix
 
     # Change root path to mapper
-    root="/dev/mapper/root"
+    root="/dev/mapper/Artix"
 fi
 
 # Make BOOT filesystem
@@ -338,11 +338,11 @@ offset=$(btrfs inspect-internal map-swapfile -r /mnt/.swap/swapfile)
 devices+=" resume_offset=$offset"
 
 ## add cryptdevice partition if enabled
-# mkinitcpio:
+# when using mkinitcpio:
 # [[ "${encrypt}" == true ]] && devices+=" cryptdevice=LABEL=LUKS:root"
-# booster:
+# when using booster:
 crypt_uuid=$(lsblk -f | grep $(basename $root) | awk '{print $4}')
-[[ "${encrypt}" == true ]] && devices+=" rd.luks.name=${crypt_uuid}=root"
+[[ "${encrypt}" == true ]] && devices+=" rd.luks.name=${crypt_uuid}=Artix"
 
 # Set command options
 grub_cmds="quiet loglevel=3 net.iframes=0 splash"
@@ -426,7 +426,7 @@ fi
 # FINISH
 swapoff -a
 umount -R /mnt
-[[ "${encrypt}" == true ]] && cryptsetup close root
+[[ "${encrypt}" == true ]] && cryptsetup close Artix
 set +x
 
 echo "
