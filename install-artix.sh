@@ -134,7 +134,7 @@ wipefs -a "${drive}"
 # Create partitions
 if [[ $duel_boot == true ]]; then
     # create root partition
-    printf ',+,L\n' "${swap_size}" \
+    printf ',+,L\n' \
         | sfdisk -qf -X gpt ${drive}
 else
     # create UEFI boot & root partition
@@ -202,7 +202,7 @@ truncate -s 0 $swapfile
 # set to copy-on-write
 chattr +Cm $swapfile
 # preallocate file size to swap size
-fallocate -l $swap_size $swapfile
+fallocate -l "$swap_size" $swapfile
 # restrict access to swap file
 chmod 0600 $swapfile
 # initialise the swap file (note: LABEL is required for bootloader)
@@ -224,18 +224,16 @@ if [[ $(grep "vendor_id" /proc/cpuinfo) == *Intel* ]]; then
 fi
 
 # Install base packages
-basestrap /mnt base base-devel dinit seatd-dinit pam_rundir booster
+basestrap /mnt \
+          base base-devel booster \
+          dinit seatd-dinit pam_rundir
 
 # Install Linux & utilities
-
 basestrap /mnt \
           linux linux-firmware \
           grub efibootmgr os-prober \
-          btrfs-progs \
-          git vim man-{db,pages} "${ucode}"
-
-# req. for refind bootloader
-# basestrap /mnt refind artools-base gdisk
+          btrfs-progs "${ucode}" \
+          git vim man-{db,pages}
 
 # Install crypt service
 if [[ "${encrypt}" == true ]]; then
@@ -326,23 +324,21 @@ echo "
 GRUB_EARLY_INITRD_LINUX_CUSTOM=booster-linux.img
 " >> /mnt/etc/default/grub
 
-# SETUP BOOTLOADER
+# SETUP BOOT LOADER
 # --------------------------------------------------------------------
-# Set devices
-## add swap for hibernation
+# Add swap device
 devices="resume=LABEL=SWAP"
 
-## when using a btrfs swapfile, an offset is required for hibernation to work
-## https://man.archlinux.org/man/btrfs.5#HIBERNATION
+# BTRFS swap files requires an offset for hibernation to work
+# https://man.archlinux.org/man/btrfs.5#HIBERNATION
 offset=$(btrfs inspect-internal map-swapfile -r /mnt/.swap/swapfile)
 devices+=" resume_offset=$offset"
 
-## add cryptdevice partition if enabled
-# when using mkinitcpio:
-# [[ "${encrypt}" == true ]] && devices+=" cryptdevice=LABEL=LUKS:root"
-# when using booster:
-crypt_uuid=$(lsblk -f | grep $(basename $root) | awk '{print $4}')
-[[ "${encrypt}" == true ]] && devices+=" rd.luks.name=${crypt_uuid}=Artix"
+# Add crypt device if enabled
+if [[ "${encrypt}" == true ]]; then
+    crypt_uuid=$(lsblk -f | grep "$(basename $root)" | awk '{print $4}')
+    devices+=" rd.luks.name=${crypt_uuid}=Artix"
+fi
 
 # Set command options
 grub_cmds="quiet loglevel=3 net.iframes=0 splash"
