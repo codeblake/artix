@@ -246,10 +246,11 @@ if [[ "${encrypt}" == true ]]; then
     basestrap /mnt cryptsetup-dinit
 fi
 
-basestrap /mnt {iwd,dhcpcd,openntpd,cronie,openssh,ufw,dbus,seatd}-dinit
+basestrap /mnt --needed \
+          {iwd,dhcpcd,openntpd,cronie,openssh,ufw,dbus,seatd}-dinit
 
 # Enable services
-services="dbus ufw iwd dhcpcd openntpd cronie turnstiled"
+services="dbus ufw iwd openntpd cronie turnstiled seatd"
 # NOTE: do not quote 'services' variable or space is ignored
 for service in ${services}; do
     artix-chroot /mnt bash -c \
@@ -323,6 +324,10 @@ sed "s/# Misc options/# Misc options\n${pac_options}/g" \
 
 # Enable firewall
 sed "s/ENABLED=no/ENABLED=yes/" -i /mnt/etc/ufw/ufw.conf
+
+# Enable iwd's built-in DHCP
+printf "[General]\nEnableNetworkConfiguration=true" \
+       > /mnt/etc/iwd/main.conf
 
 # Set MAKEFLAGS to match CPU threads for faster compiling
 cp /etc/makepkg.conf /etc/makepkg.conf.bak
