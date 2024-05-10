@@ -326,6 +326,7 @@ sed "s/# Misc options/# Misc options\n${pac_options}/g" \
 sed "s/ENABLED=no/ENABLED=yes/" -i /mnt/etc/ufw/ufw.conf
 
 # Enable iwd's built-in DHCP
+mkdir -p /mnt/etc/iwd
 printf "[General]\nEnableNetworkConfiguration=true" \
        > /mnt/etc/iwd/main.conf
 
