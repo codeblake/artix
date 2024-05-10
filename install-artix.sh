@@ -14,16 +14,21 @@ boot_size=512M
 # DUEL-BOOT (i.e. a shared boot partition is used)
 # Note:
 # - ensure BOOT & ROOT are set to the correct partitions
-# - when enabled, the boot partition will NOT be formatted
+# - BOOT partition will NOT be formatted, only DRIVE will be formatted
 # - boot partition must be ready to use (i.e. created/formatted)
 duel_boot=false
 
 # System
 timezone=Europe/London
 locale=en_GB
-user=blake
-user_groups=wheel,video,audio,input,seat
 hostname=ArtixPC
+user=blake
+
+# Note: the groups provided are required for seatd to work and may
+# vary depending on your use-case. See the following URL for
+# information regarding the purpose of each group:
+# https://wiki.archlinux.org/title/Users_and_groups#Group_list
+user_groups=wheel,video,audio,input,seat,log
 
 # Options
 autologin=false
@@ -226,7 +231,8 @@ fi
 # Install base packages
 basestrap /mnt \
           base base-devel booster \
-          dinit seatd-dinit pam_rundir
+          dinit seatd-dinit \
+          turnstile-dinit pambase-turnstile
 
 # Install Linux & utilities
 basestrap /mnt \
@@ -240,10 +246,10 @@ if [[ "${encrypt}" == true ]]; then
     basestrap /mnt cryptsetup-dinit
 fi
 
-basestrap /mnt {iwd,dhcpcd,openntpd,cronie,openssh,ufw,dbus}-dinit
+basestrap /mnt {iwd,dhcpcd,openntpd,cronie,openssh,ufw,dbus,seatd}-dinit
 
 # Enable services
-services="dbus ufw iwd dhcpcd openntpd cronie"
+services="dbus ufw iwd dhcpcd openntpd cronie turnstiled"
 # NOTE: do not quote 'services' variable or space is ignored
 for service in ${services}; do
     artix-chroot /mnt bash -c \
@@ -300,6 +306,15 @@ if [[ "${autologin}" == true ]]; then
     sed "s/GETTY_ARGS=.*/GETTY_ARGS=\"--noclear --autologin ${user}\"/" \
         -i /mnt/etc/dinit.d/config/agetty-tty1.conf
 fi
+
+# Configure turnstile to manage rundirs (XDG_RUNTIME_DIR)
+sed "s/manage_rundirs\s*=.*/manage_rundirs = yes/" \
+    -u /mnt/etc/turnstile/turnstiled.conf
+
+# Setup user dinit log directory
+mkdir /mnt/var/log/dinit/user
+chgrp log /mnt/var/log/dinit/user
+chmod g+rw /mnt/var/log/dinit/user
 
 # Add PACMAN download style
 pac_options=ILoveCandy
